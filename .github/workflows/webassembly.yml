@@ -2,10 +2,10 @@ name: WebAssembly
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - 'src/**'
-      - '.github/workflows/webassembly.yml'
+  # push:
+  #   paths:
+  #     - 'src/**'
+  #     - '.github/workflows/webassembly.yml'
   release:
     types: [published]
     
