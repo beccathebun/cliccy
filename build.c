@@ -40,10 +40,10 @@ static struct conf_t conf = {.windows=true};
 # define CC "gcc"
 # define CC_WIN "x86_64-w64-mingw32-gcc"
 # ifdef USE_WAYLAND_DISPLAY
-#   define LDLIBS "-Lraylib/src","-lraylib","-lGL","-lm","-lpthread","-ldl","-lrt","-lnotify","-lgdk_pixbuf-2.0","-lgio-2.0","-lgobject-2.0","-lglib-2.0", "-lwayland-client","-lwayland-cursor","-lwayland-egl","-lxkbcommon"
+#   define LDLIBS "-Lraylib/src","-l:libraylib.a","-lGL","-lm","-lpthread","-ldl","-lrt","-lnotify","-lgdk_pixbuf-2.0","-lgio-2.0","-lgobject-2.0","-lglib-2.0", "-lwayland-client","-lwayland-cursor","-lwayland-egl","-lxkbcommon"
 #   else
-#   define LDLIBS "-Lraylib/src","-lraylib","-lGL","-lm","-lpthread","-ldl","-lrt","-lnotify","-lgdk_pixbuf-2.0","-lgio-2.0","-lgobject-2.0","-lglib-2.0","-lX11"
-#   define LDLIBS_WIN "-Lresources/raylib_mingw/lib", "-lraylib","-lopengl32","-lgdi32","-lwinmm","-lcomdlg32","-lole32","-static", "-lpthread"
+#   define LDLIBS "-Lraylib/src","-l:libraylib.a","-lGL","-lm","-lpthread","-ldl","-lrt","-lnotify","-lgdk_pixbuf-2.0","-lgio-2.0","-lgobject-2.0","-lglib-2.0","-lX11"
+#   define LDLIBS_WIN "-Lresources/raylib_mingw/lib", "-l:libraylib.a","-lopengl32","-lgdi32","-lwinmm","-lcomdlg32","-lole32","-static", "-lpthread"
 static struct conf_t conf = {.rl = true};
 # endif
 #else
