@@ -1,157 +1,14 @@
-
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
-#define NOB_STRIP_PREFIX
-#define NOB_IMPLEMENTATION
-#include <nob.h>
-#include <raylib.h>
-#include <time.h>
-#include <stdlib.h>
-
-#define TOML_IMPLEMENTATION
-#include <toml-c.h>
-
-#define _CALLOC CALLOC
-#include "util.c"
-
-#define CLAY_IMPLEMENTATION
-#include <clay.h>
-#include <clay_renderer_raylib.c>
-#include "ui.c"
-#define LOGGER_IMPL
-#include <log.h>
-
-
-
-
-#if defined(DEBUG) && !defined(_WIN32)
-# define PPRINT_IMPLEMENTATION
-# include <pprint.h>
-#endif //DEBUG
-
-
+#include "cliccy.h"
 #if defined(_WIN32)
-
-# include <Shlobj.h>
-# include <EasyWinNotyCWrapper.h>
-# define URL_OPEN "open"
-# define sleep Sleep
-# define PATHSEP "\\"
+// PEASYWINNOTY noty;
 char *stpcpy(char *dst, char *src) {
   char *r = strcpy(dst, src);
   return r + strlen(r);
 }
-// PEASYWINNOTY noty;
 #elif defined(__linux__)
-#include "glib-object.h"
-#include "glib.h"
-#include <libnotify/notification.h>
-#include <libnotify/notify.h>
-# define URL_OPEN "xdg-open"
-# define PATHSEP "/"
 static NotifyNotification *curr_notif = NULL;
 static GMainLoop *loop = NULL;
-
 #endif // _WIN32, __linux__
-
-#define streq(s1, s2) (strcmp(s1,s2) == 0)
-#define arr_rand(a) a[rand() % ARRAY_LEN(a)]
-#define da_rand(a)  (a.items)[rand() % (a.count)]
-static int rand_range(int min, int max)
-{
-    int diff = max-min;
-    return (int) (((double)(diff+1)/RAND_MAX) * rand() + min);
-}
-typedef bool (*dispatcher)(void);
-
-// TODO: get rid of this shit it makes no sense
-typedef enum {
-  Res_Success = 0,
-  Res_Fail_Gen,
-  Res_Fail_Libnotify,
-  Res_Fail_Nvd,
-  Res_Fail_Crash
-} Result;
-
-typedef enum {
-  CA_Link = 0,
-  CA_Notif,
-  CA_Dialog,
-  CA_Question,
-  CA_Lines,
-  CA_COUNT
-} Clickslut_Action;
-
-typedef enum {
-  Qs_First = 0,
-  Qs_Bad,
-  Qs_Done,
-} Question_Stage;
-
-typedef struct {
-  const char *text;
-  char       *yes;
-  char       *no;
-  char       *wrong;
-  Question_Stage stage;
-} QuestionConfig;
-
-typedef struct {
-  const char *line;
-  size_t attempts;
-  size_t fails;
-  size_t target;
-  bool show_fail;
-  time_t close_fail;
-  bool done;
-  time_t close;
-} LinesCfg;
-
-
-typedef struct {
-  int64_t minimum;
-  int64_t maximum;
-} TimerConfig;
-
-typedef struct {
-  size_t capacity;
-  size_t count;
-  char **items;
-} CliccyStrs;
-
-typedef struct {
-  bool lines;
-  bool links;
-  bool notifs;
-  bool popups;
-} FeatConfig;
-
-typedef struct {
-  char *icon;
-} NotifConfig;
-
-typedef struct {
-  size_t minimum;
-  size_t maximum;
-  size_t penalty_min;
-  size_t penalty_max;
-} LinesConfig;
-
-typedef struct config_cfg_t {
-  FeatConfig  feat;
-  TimerConfig timer;
-  NotifConfig notifs;
-  LinesConfig lines;
-} config_cfg_t;
-
-typedef struct config_data_t {
-  char      *title;
-  CliccyStrs lines;
-  CliccyStrs petnames;
-  CliccyStrs links;
-} config_data_t;
-
 static struct config_t {
   config_cfg_t config;
   config_data_t data;
@@ -806,20 +663,6 @@ Clay_RenderCommandArray CreateLinesLayout(
   return Clay_EndLayout();
 }
 
-time_t time_offset(time_t t, int s, int min, int h, int d) {
-  struct tm *ptr = localtime(&t);
-  ptr->tm_sec  += s;
-  ptr->tm_min  += min;
-  ptr->tm_hour += h;
-  ptr->tm_mday += d;
-  return mktime(ptr);
-}
-
-#define time_offset_s(s) (time_offset(time(NULL), (s), 0, 0, 0))
-#define time_offset_min(min) (time_offset(time(NULL), 0, (min), 0, 0))
-#define time_offset_h(h) (time_offset(time(NULL), 0, 0, (h), 0))
-#define time_offset_d(d) (time_offset(time(NULL), 0, 0, 0, (d)))
-
 /**
 callback for when input box is submitted
  */
@@ -846,8 +689,6 @@ void input_submit(InputConfig *conf) {
     conf->enabled  = false;
   }
 }
-
-
 
 bool lines_new() {
   rl_init(500,600);
@@ -910,14 +751,10 @@ bool dispatch_action() {
   return dispatchers[CA_Question]();
 }
 
-#define seed() srand(time(NULL))
-
-
 time_t rand_time() {
   int min = rand_range(cfg.config.timer.minimum, cfg.config.timer.maximum);
   return time_offset_min(min);
 }
-
 
 bool init_config(char *path) {
   char *conf_dir;
@@ -1058,5 +895,4 @@ defer:
 }
 
 // TODO : clean up the mess
-// TODO : rewrite dialogs in raylib for less fuckery and more control
 // TODO : windows??
