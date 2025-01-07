@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #define NOB_IMPLEMENTATION
@@ -6,6 +7,7 @@
 #include "include/nob.h"
 #define LOGGER_IMPL
 #include "include/log.h"
+#include "src/util.c"
 void nob_log(Nob_Log_Level level, const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
@@ -67,6 +69,40 @@ bool build_app(Cmd *cmd) {
   return cmd_run_sync_and_reset(cmd);
 }
 
+static const char *desktop_file_str = "[Desktop Entry]\n"
+"Type=Application\n"
+"Version=0.1\n"
+"Name=Cliccy\n"
+"Comment=fun program for cuties :3\n"
+"TryExec=cliccy\n"
+"Exec=cliccy\n"
+"Icon=cliccy\n"
+"Terminal=false\n"
+"Categories=Game;Adult;\n"
+"StartupNotify=false\n"
+"X-GNOME-Autostart-Delay=60\n"
+"X-Desktop-File-Install-Version=0.26\n";
+
+bool install_app(Cmd *cmd) {
+  char *home = getenv("HOME");
+  char *binhome = concat(home, "/.local/bin");
+  char *autostart = concat(home, "/.config/autostart");
+  char *dstpath = concat(binhome, "/cliccy");
+  char *desktop_file = concat(autostart, "/cliccy.desktop");
+  assert(home != NULL && "homedir is null");
+  if(!nob_mkdir_if_not_exists(binhome)) return false;
+  if(!nob_mkdir_if_not_exists(autostart)) return false;
+  if(nob_file_exists(dstpath)) {
+    remove(dstpath);
+  }
+  if(!nob_copy_file("./cliccy", binhome)) return false;
+  if(nob_file_exists(desktop_file)) {
+    remove(desktop_file);
+  }
+  if(!nob_write_entire_file(desktop_file, desktop_file_str, strlen(desktop_file_str))) return false;
+  return true;
+}
+
 void print_help(char *program_name) {
   char *pfile = program_name + strlen(program_name);
   for (; pfile > program_name; pfile--) {
@@ -76,14 +112,16 @@ void print_help(char *program_name) {
     }
   }
   printf("|------------- \e[95;1mbuilder for cliccy\e[0m ------------|\n");
-  printf("    \e[94;1musage:\e[0m \e[96;1m."PATHSEP"%s\e[0m [run|win|test|debug]\n", pfile);
+  printf("  \e[94;1musage:\e[0m \e[96;1m."PATHSEP"%s\e[0m [run|win|test|debug|install]\n", pfile);
   printf("|------------------- \e[95;1mflags\e[0m -------------------|\n");
   //printf("|   \e[96;1mrl\e[0m    - build raylib                      |\n");
-  printf("|   \e[96;1mrun\e[0m   - run app after building            |\n");
-  printf("|   \e[96;1mwin\e[0m   - compile using mingw64             |\n");
-  printf("|           (doesn't do anything on windows)  |\n");
-  printf("|   \e[96;1mtest\e[0m  - run app with 'test' argument      |\n");
-  printf("|   \e[96;1mdebug\e[0m - compile app with -DDEBUG          |\n");
+  printf("|   \e[96;1mrun\e[0m     - run app after building          |\n");
+  printf("|   \e[96;1mwin\e[0m     - compile using mingw64           |\n");
+  printf("|            (doesn't do anything on windows) |\n");
+  printf("|   \e[96;1mtest\e[0m    - run app with 'test' argument    |\n");
+  printf("|   \e[96;1mdebug\e[0m   - compile app with -DDEBUG        |\n");
+  printf("|   \e[96;1minstall\e[0m - install app with autostart      |\n");
+  printf("|            (works only on linux)            |\n");
   printf("|---------------------------------------------|\n");
 }
 
