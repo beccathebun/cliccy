@@ -1,6 +1,7 @@
 config.toml
 build.old
 resources/libnotify/*
+resources/raylib/*
 # Prerequisites
 *.d
 
