@@ -1,3 +1,4 @@
+
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -9,6 +10,7 @@
 #include "include/log.h"
 #include "src/util.c"
 void nob_log(Nob_Log_Level level, const char *fmt, ...) {
+  if(logger_print_time) logger_print_time = false;
   va_list args;
   va_start(args, fmt);
   vlogs(level+3, fmt, args);
@@ -16,12 +18,9 @@ void nob_log(Nob_Log_Level level, const char *fmt, ...) {
 }
 struct conf_t {
   bool windows;
-  bool test;
   bool debug;
   bool run;
-  bool rl;
-  bool lines;
-  bool question;
+  bool force;
 };
 
 #define CFLAGS "-std=c23","-D_DEFAULT_SOURCE","-Wno-missing-braces","-Wno-unused-value","-Wno-pointer-sign", "-ggdb"
@@ -44,7 +43,7 @@ static struct conf_t conf = {.windows=true};
 #   else
 #   define LDLIBS "-Lraylib/src", "-Lresources/libnotify/lib64","-l:libraylib.a","-lGL","-lm","-lpthread","-ldl","-lrt","-l:libnotify.a","-lgdk_pixbuf-2.0","-lgio-2.0","-lgobject-2.0","-lglib-2.0","-lX11"
 #   define LDLIBS_WIN "-Lresources/raylib_mingw/lib", "-l:libraylib.a","-lopengl32","-lgdi32","-lwinmm","-lcomdlg32","-lole32","-static", "-lpthread"
-static struct conf_t conf = {.rl = true};
+static struct conf_t conf = {0};
 # endif
 #else
 # error "platform not supported bc dev is lazy :'3"
@@ -52,32 +51,69 @@ static struct conf_t conf = {.rl = true};
 //meson setup -Dprefix=/home/rebecca/code/c/something/resources/libnotify -Dman=false -Dgtk_doc=false -Ddocbook_docs=disabled -Dintrospection=disabled -Ddefault_library=static --reconfigure build
 //"meson","setup","-Dprefix=../resources/libnotify","-Dman=false","-Dgtk_doc=false","-Ddocbook_docs=disabled","-Dintrospection=disabled","-Ddefault_library=static","--reconfigure","build"
 bool build_notify(Cmd *cmd) {
+  if(!conf.force && file_exists("resources/libnotify/lib64/libnotify.a")) {
+    logs(Log_Info, "libnotify already built :3");
+    return true;
+  }
+    
   bool result = true;
-  char *dirup = NULL;
+  const char *cwd = get_current_dir_temp();
+  logs(Log_Info, "Building libnotify :3");
   if(!mkdir_if_not_exists("resources/libnotify")) return_defer(false);
-  const char *cwd = concat("-Dprefix=", nob_get_current_dir_temp());
+  const char *d = concat("-Dprefix=", cwd);
   set_current_dir("./libnotify");
-  dirup = "..";
-  const char *libnotify_prefix = concat(cwd, "/resources/libnotify");
+  const char *libnotify_prefix = concat(d, "/resources/libnotify");
   cmd_append(cmd, "meson","setup",libnotify_prefix,"-Dman=false","-Dgtk_doc=false","-Ddocbook_docs=disabled","-Dintrospection=disabled","-Ddefault_library=static","build");
   
   if(!cmd_run_sync_and_reset(cmd)) return_defer(false);
   set_current_dir("./build");
   cmd_append(cmd, "meson", "install");
-  dirup = "../..";
   if(!cmd_run_sync_and_reset(cmd)) return_defer(false);
 defer:
-  if(dirup) set_current_dir(dirup);
+  set_current_dir(cwd);
   temp_reset();
   return result;
 }
 
 bool build_raylib(Cmd *cmd) {
-  cmd_append(cmd, "make", "-C", "raylib/src");
-  return cmd_run_sync_and_reset(cmd);
+  if(!conf.force && file_exists("resources/raylib/lib64/libraylib.a")) {
+    logs(Log_Info, "raylib already built :3");
+    return true;
+  }
+  bool result = true;
+  const char *cwd = get_current_dir_temp();
+  const char *rl_build = "raylib/build";
+  if(!mkdir_if_not_exists(rl_build)) return false;
+  const char *cmake_prefix = concat(cwd, "/resources/raylib");
+  set_current_dir(rl_build);
+  cmd_append(cmd, "cmake", concat("-DCMAKE_INSTALL_PREFIX:PATH=", cmake_prefix), "..");
+  if(!cmd_run_sync_and_reset(cmd)) return_defer(false);
+  cmd_append(cmd, "make", "-j5", "install");
+  if(!cmd_run_sync_and_reset(cmd)) return_defer(false);
+
+  //cmd_append(cmd, "make", "-C", "raylib/src");
+defer:
+  set_current_dir(cwd);
+  temp_reset();
+  return result;
 }
 
+const char *input_paths[] = {
+  "src/cliccy.c",
+  "src/cliccy.h",
+  "src/ui.c",
+  "src/util.c",
+  "include/log.h",
+  "include/nob.h",
+  "include/clay.h",
+  "include/clay_renderer_raylib.c"
+};
+
 bool build_app(Cmd *cmd) {
+  if(!conf.force && !nob_needs_rebuild("./cliccy", input_paths, ARRAY_LEN(input_paths))){
+    logs(Log_Info, "app already latest version :3");
+    return true;
+  }
   cmd_append(cmd, conf.windows ? CC_WIN : CC, "-o", "cliccy");
   cmd_append(cmd,CFLAGS);
   if(conf.debug) cmd_append(cmd, "-DDEBUG");
@@ -133,47 +169,50 @@ void print_help(char *program_name) {
       break;
     }
   }
-  printf("|------------- \e[95;1mbuilder for cliccy\e[0m ------------|\n");
-  printf("  \e[94;1musage:\e[0m \e[96;1m."PATHSEP"%s\e[0m [run|win|test|debug|install]\n", pfile);
-  printf("|------------------- \e[95;1mflags\e[0m -------------------|\n");
+  printf("|------------- \e[95;1mbuilder for cliccy!\e[0m ------------|\n");
+  printf("    \e[94;1musage:\e[0m \e[96;1m."PATHSEP"%s\e[0m [flag(s)]\n", pfile);
+  printf("|------------------- \e[95;1mflags:\e[0m -------------------|\n");
   //printf("|   \e[96;1mrl\e[0m    - build raylib                      |\n");
-  printf("|   \e[96;1mrun\e[0m     - run app after building          |\n");
-  printf("|   \e[96;1mwin\e[0m     - compile using mingw64           |\n");
-  printf("|            (doesn't do anything on windows) |\n");
-  printf("|   \e[96;1mtest\e[0m    - run app with 'test' argument    |\n");
-  printf("|   \e[96;1mdebug\e[0m   - compile app with -DDEBUG        |\n");
-  printf("|   \e[96;1minstall\e[0m - install app with autostart      |\n");
-  printf("|            (works only on linux)            |\n");
-  printf("|---------------------------------------------|\n");
+  printf("|   \e[96;1mrun\e[0m     - run app after building           |\n");
+  printf("|   \e[96;1mwin\e[0m     - compile using mingw64            |\n");
+  printf("|            (doesn't do anything on windows)  |\n");
+  printf("|   \e[96;1mtest\e[0m    - run app with 'test' argument     |\n");
+  printf("|   \e[96;1mdebug\e[0m   - compile app with -DDEBUG         |\n");
+  printf("|   \e[96;1mforce\e[0m   - force compile everything         |\n");
+  printf("|   \e[96;1minstall\e[0m - install app with autostart       |\n");
+  printf("|            (works only on linux)             |\n");
+  printf("|                                              |\n");
+  printf("|  unrecognised args will be passed to cliccy  |\n");
+  printf("|               if [run] is set                |\n");
+  printf("|----------------------------------------------|\n");
 }
 
 int main(int argc, char **argv) {
+  logger_print_time = false;
   NOB_GO_REBUILD_URSELF(argc, argv);
   char *program = shift(argv, argc);
   Cmd cmd = {0};
+  Cmd args = {0};
   while(argc > 0) {
     char *val = shift(argv, argc);
     while(val[0] == '-') val++;
-    if(strcmp(val, "test") == 0) 
-      conf.test = true;
-    else if(strcmp(val, "debug") == 0) 
+    if(strcmp(val, "debug") == 0) 
       conf.debug = true;
     else if(strcmp(val, "win") == 0) 
       conf.windows = true;
     else if(strcmp(val, "run") == 0) 
       conf.run = true;
-    // else if(strcmp(val, "rl") == 0) 
-    //   conf.rl = true;
-    else if(strcmp(val, "test-l") == 0){
-      conf.test = true;
-      conf.lines = true;
-    } else if(strcmp(val, "test-q") == 0){
-      conf.test = true;
-      conf.question = true;
-    } else if(strcmp(val, "help") == 0
+    else if(strcmp(val, "help") == 0
       || strcmp(val, "h") == 0) {
       print_help(program);
       return 0;
+    } else if(strcmp(val, "force") == 0
+      || strcmp(val, "f") == 0) {
+      conf.force = true;
+    } else if(conf.run) {
+      cmd_append(&args, val);
+      da_append_many(&args, argv, argc);
+      break;
     } else {
       nob_log(WARNING, "unknown flag: %s", val);
       print_help(program);
@@ -183,16 +222,14 @@ int main(int argc, char **argv) {
 #ifdef __linux__
   if(!build_notify(&cmd)) return 1;
 #endif
-  if(conf.rl && !build_raylib(&cmd)) return 1;
+  if(!build_raylib(&cmd)) return 1;
   if(!build_app(&cmd)) return 1;
   if(conf.run) {
     cmd_append(&cmd, "./cliccy");
-    if(conf.test) cmd_append(&cmd, "test");
-    
-    if(conf.lines) cmd_append(&cmd, "l");
-    else if(conf.question) cmd_append(&cmd, "q");
-
+    if(args.count) da_append_many(&cmd, args.items, args.count);
     if(!cmd_run_sync_and_reset(&cmd)) return 1;
   }
+  da_free(args);
+  da_free(cmd);
   return 0;
 }
