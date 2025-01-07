@@ -8,8 +8,7 @@ fun program for cuties :3
 #### Linux
 
 **Note:**
-  - You may need to install libnotify if you haven't it already (libnotify-dev on debian, notify-devel on fedora)
-  - There may be other dependencies you need, just follow compiler errors ^^;
+  - There may be some dependencies you need, just follow compiler errors ^^;
 
 To bootstrap builder **(only need to do this once)**:
 ```bash

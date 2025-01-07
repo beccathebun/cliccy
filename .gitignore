@@ -1,6 +1,6 @@
 config.toml
 build.old
-
+resources/libnotify/*
 # Prerequisites
 *.d
 

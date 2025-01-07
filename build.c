@@ -40,15 +40,37 @@ static struct conf_t conf = {.windows=true};
 # define CC "gcc"
 # define CC_WIN "x86_64-w64-mingw32-gcc"
 # ifdef USE_WAYLAND_DISPLAY
-#   define LDLIBS "-Lraylib/src","-l:libraylib.a","-lGL","-lm","-lpthread","-ldl","-lrt","-lnotify","-lgdk_pixbuf-2.0","-lgio-2.0","-lgobject-2.0","-lglib-2.0", "-lwayland-client","-lwayland-cursor","-lwayland-egl","-lxkbcommon"
+#   define LDLIBS "-Lraylib/src", "-Lresources/libnotify/lib64","-l:libraylib.a","-lGL","-lm","-lpthread","-ldl","-lrt","-l:libnotify.a","-lgdk_pixbuf-2.0","-lgio-2.0","-lgobject-2.0","-lglib-2.0", "-lwayland-client","-lwayland-cursor","-lwayland-egl","-lxkbcommon"
 #   else
-#   define LDLIBS "-Lraylib/src","-l:libraylib.a","-lGL","-lm","-lpthread","-ldl","-lrt","-lnotify","-lgdk_pixbuf-2.0","-lgio-2.0","-lgobject-2.0","-lglib-2.0","-lX11"
+#   define LDLIBS "-Lraylib/src", "-Lresources/libnotify/lib64","-l:libraylib.a","-lGL","-lm","-lpthread","-ldl","-lrt","-l:libnotify.a","-lgdk_pixbuf-2.0","-lgio-2.0","-lgobject-2.0","-lglib-2.0","-lX11"
 #   define LDLIBS_WIN "-Lresources/raylib_mingw/lib", "-l:libraylib.a","-lopengl32","-lgdi32","-lwinmm","-lcomdlg32","-lole32","-static", "-lpthread"
 static struct conf_t conf = {.rl = true};
 # endif
 #else
 # error "platform not supported bc dev is lazy :'3"
 #endif
+//meson setup -Dprefix=/home/rebecca/code/c/something/resources/libnotify -Dman=false -Dgtk_doc=false -Ddocbook_docs=disabled -Dintrospection=disabled -Ddefault_library=static --reconfigure build
+//"meson","setup","-Dprefix=../resources/libnotify","-Dman=false","-Dgtk_doc=false","-Ddocbook_docs=disabled","-Dintrospection=disabled","-Ddefault_library=static","--reconfigure","build"
+bool build_notify(Cmd *cmd) {
+  bool result = true;
+  char *dirup = NULL;
+  if(!mkdir_if_not_exists("resources/libnotify")) return_defer(false);
+  const char *cwd = concat("-Dprefix=", nob_get_current_dir_temp());
+  set_current_dir("./libnotify");
+  dirup = "..";
+  const char *libnotify_prefix = concat(cwd, "/resources/libnotify");
+  cmd_append(cmd, "meson","setup",libnotify_prefix,"-Dman=false","-Dgtk_doc=false","-Ddocbook_docs=disabled","-Dintrospection=disabled","-Ddefault_library=static","build");
+  
+  if(!cmd_run_sync_and_reset(cmd)) return_defer(false);
+  set_current_dir("./build");
+  cmd_append(cmd, "meson", "install");
+  dirup = "../..";
+  if(!cmd_run_sync_and_reset(cmd)) return_defer(false);
+defer:
+  if(dirup) set_current_dir(dirup);
+  temp_reset();
+  return result;
+}
 
 bool build_raylib(Cmd *cmd) {
   cmd_append(cmd, "make", "-C", "raylib/src");
@@ -158,6 +180,9 @@ int main(int argc, char **argv) {
       return 1;
     }
   }
+#ifdef __linux__
+  if(!build_notify(&cmd)) return 1;
+#endif
   if(conf.rl && !build_raylib(&cmd)) return 1;
   if(!build_app(&cmd)) return 1;
   if(conf.run) {
