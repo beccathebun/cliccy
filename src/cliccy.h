@@ -14,13 +14,8 @@
 #include <raylib.h>
 #include <time.h>
 #include <stdlib.h>
-
 #define TOML_IMPLEMENTATION
 #include <toml-c.h>
-
-#define _CALLOC CALLOC
-#include "util.c"
-
 #define CLAY_IMPLEMENTATION
 #include <clay.h>
 #include <clay_renderer_raylib.c>
@@ -32,11 +27,38 @@
 # include <pprint.h>
 #endif //DEBUG
 #if defined(_WIN32)
-# include <Shlobj.h>
-# include <EasyWinNotyCWrapper.h>
+//# include <Shlobj.h>
+//# include <EasyWinNotyCWrapper.h>
 # define URL_OPEN "open"
 # define sleep Sleep
 # define PATHSEP "\\"
+
+// --------------------------------------------------
+// stolen from:
+// musl/src/string/stpcpy.c
+#define ALIGN (sizeof(size_t))
+#define ONES ((size_t)-1/UCHAR_MAX)
+#define HIGHS (ONES * (UCHAR_MAX/2+1))
+#define HASZERO(x) ((x)-ONES & ~(x) & HIGHS)
+char *stpcpy(char *restrict d, const char *restrict s)
+{
+#ifdef __GNUC__
+	typedef size_t __attribute__((__may_alias__)) word;
+	word *wd;
+	const word *ws;
+	if ((uintptr_t)s % ALIGN == (uintptr_t)d % ALIGN) {
+		for (; (uintptr_t)s % ALIGN; s++, d++)
+			if (!(*d=*s)) return d;
+		wd=(void *)d; ws=(const void *)s;
+		for (; !HASZERO(*ws); *wd++ = *ws++);
+		d=(void *)wd; s=(const void *)ws;
+	}
+#endif
+	for (; (*d=*s); s++, d++);
+
+	return d;
+}
+// --------------------------------------------------
 #elif defined(__linux__)
 #include "glib-object.h"
 #include "glib.h"
@@ -45,6 +67,9 @@
 # define URL_OPEN "xdg-open"
 # define PATHSEP "/"
 #endif // _WIN32, __linux__
+#define _CALLOC CALLOC
+//must be included after stpcpy is defined for windows :'3
+#include "util.c"
 typedef bool (*dispatcher)(void);
 
 // TODO: get rid of this shit it makes no sense
