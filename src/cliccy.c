@@ -1,10 +1,6 @@
 #include "cliccy.h"
 #if defined(_WIN32)
 // PEASYWINNOTY noty;
-char *stpcpy(char *dst, char *src) {
-  char *r = strcpy(dst, src);
-  return r + strlen(r);
-}
 #elif defined(__linux__)
 static NotifyNotification *curr_notif = NULL;
 static GMainLoop *loop = NULL;
