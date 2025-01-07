@@ -37,7 +37,7 @@ bool __startsWith_(const char *pre, const char *str, bool ci)
 /// case insensitive `startsWith`
 #define istartsWith(prefix, string) __startsWith_(prefix,string,true)
 
-char *__concat_(char *s1, char *s2, bool space, uint8_t nexc) {
+char *__concat_(const char *s1, const char *s2, bool space, uint8_t nexc) {
   char *result = (char*)(_CALLOC(strlen(s1) + strlen(s2) + (space ? 2 : 1) + nexc, sizeof(char)));
   char *nb     = stpcpy(result, s1);
   if(nexc) for(;nexc > 0; --nexc,++nb) *nb='!'; 
