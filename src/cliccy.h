@@ -10,7 +10,9 @@
 #include <stdio.h>
 #define NOB_STRIP_PREFIX
 #define NOB_IMPLEMENTATION
+#define NOB_CUSTOM_LOG
 #include <nob.h>
+
 #include <raylib.h>
 #include <time.h>
 #include <stdlib.h>
@@ -22,10 +24,12 @@
 #include "ui.c"
 #define LOGGER_IMPL
 #include <log.h>
-#if defined(DEBUG) && !defined(_WIN32)
-# define PPRINT_IMPLEMENTATION
-# include <pprint.h>
-#endif //DEBUG
+inline void nob_log(Nob_Log_Level level, const char *fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  vlogs(level+3, fmt, args);
+  va_end(args);
+}
 #if defined(_WIN32)
 //# include <Shlobj.h>
 //# include <EasyWinNotyCWrapper.h>
