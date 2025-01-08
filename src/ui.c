@@ -34,6 +34,8 @@
 #define hoverCBDef(n) void n(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData)
 
 typedef void (*clay_onhover)(Clay_ElementId elementId, Clay_PointerData pointerInfo, intptr_t userData);
+
+
 extern void RenderButton(const char *id, Clay_Color color, const char *text, Clay_TextElementConfig *textConfig, clay_onhover hoverCB, intptr_t user_data) {
     CLAY(CLAY_ID(id),
     CLAY_LAYOUT({ 
@@ -70,13 +72,17 @@ extern void RenderButton(const char *id, Clay_Color color, const char *text, Cla
         CLAY_TEXT(CLAY_STRING(text), textConfig);
     }
 }
-typedef struct input_t InputConfig;
 
-typedef void (*input_submit_t)(InputConfig *input);
+typedef struct input_t Input;
+
+typedef void (*input_submit_t)(Input *input);
 
 struct input_t {
   const char *id; // id passed to clay
   Clay_Color color; // color of the input box
+  Clay_Color diabled_color; // color of the input box / text when disabled
+  Clay_TextElementConfig *textConfig;
+  Clay_TextElementConfig *disabled_textConfig;
   input_submit_t submit; // callback for when input box is submitted
   intptr_t userdata; // anything you want to access in callback
   size_t buf_size;
@@ -85,7 +91,6 @@ struct input_t {
   bool enabled;
   size_t framecount; // for rendering blinking cursor
   char *disabled_text; // text shown in box when disabled
-  Clay_Color diabled_color; // color of the input box / text when disabled
   char *buf; // buffer (allocate separately)
 };
 
@@ -96,7 +101,7 @@ struct input_t {
   .color = (col)                                               \
 }
 
-extern void poll_input(InputConfig *input){
+extern void poll_input(Input *input){
   if(!input->enabled) return;
   assert(input->buf != NULL && "inputbox: forgot to alloc buffer?");
   bool btnDown = IsMouseButtonDown(0);
@@ -135,7 +140,7 @@ extern void poll_input(InputConfig *input){
   } else if(input->framecount) input->framecount = 0;
 }
 
-extern void RenderInputbox(Clay_TextElementConfig *textConfig, InputConfig *input) {
+extern void RenderInputbox(Input *input) {
   CLAY(CLAY_ID(input->id),
     CLAY_LAYOUT({ 
       .sizing = {
@@ -162,18 +167,18 @@ extern void RenderInputbox(Clay_TextElementConfig *textConfig, InputConfig *inpu
           .lineThick    = LINE_THIC,
           })) {
         if(input->enabled) {
-          CLAY_TEXT(CLAY_STRING(input->buf), textConfig);
+          CLAY_TEXT(CLAY_STRING(input->buf), input->textConfig);
           if (((input->framecount/20)%2) == 0 && input->focused){
-            CLAY_TEXT(CLAY_STRING("|"), TEXT_CONF(textConfig->fontSize + 2, Clay_GetColor(0xffffffff)));
+            CLAY_TEXT(CLAY_STRING("|"), TEXT_CONF(input->textConfig->fontSize + 2, Clay_GetColor(0xffffffff)));
           }
         } else {
-          CLAY_TEXT(CLAY_STRING(input->disabled_text), TEXT_CONF(textConfig->fontSize, input->diabled_color));
+          CLAY_TEXT(CLAY_STRING(input->disabled_text), input->textConfig);
         }
         
           
     }
 }
-extern void input_reset_buf(InputConfig *input) {
+extern void input_reset_buf(Input *input) {
   input->count = 0;
   memset(input->buf, 0, input->buf_size);
 }

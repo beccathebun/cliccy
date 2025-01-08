@@ -335,8 +335,6 @@ bool dialog_new() {
   return true;
 }
 
-
-
 hoverCBDef(HandleQuestionOk) {
   QuestionConfig *conf = (QuestionConfig*)userData;
   if (pointerData.state == CLAY_POINTER_DATA_PRESSED_THIS_FRAME) {
@@ -532,7 +530,7 @@ bool question_new() {
 }
 
 Clay_RenderCommandArray CreateLinesLayout(
-  InputConfig  *conf
+  Input  *conf
 ) {
   LinesCfg *lines = (LinesCfg*)conf->userdata;
   Clay_BeginLayout();
@@ -652,7 +650,7 @@ Clay_RenderCommandArray CreateLinesLayout(
         },
         .padding = {.x = 10, .y = 20}
       })){
-        RenderInputbox(TEXT_CONF(30, COLOR_TEAL), conf);
+        RenderInputbox(conf);
       }
     }
   }
@@ -662,7 +660,7 @@ Clay_RenderCommandArray CreateLinesLayout(
 /**
 callback for when input box is submitted
  */
-void input_submit(InputConfig *conf) {
+void input_submit(Input *conf) {
   LinesCfg *lines = (LinesCfg *)conf->userdata;
   lines->attempts++;
   if(!streq(lines->line, conf->buf)) {
@@ -693,7 +691,7 @@ bool lines_new() {
     .target = (size_t)rand_range(cfg.config.lines.minimum, cfg.config.lines.maximum)
   };
   size_t lnlen = strlen(lines.line)+1;
-  InputConfig input = {
+  Input input = {
     .buf = CALLOC(lnlen, sizeof(char)),
     .buf_size = lnlen,
     .color = COLOR_TEAL,
@@ -702,7 +700,8 @@ bool lines_new() {
     .userdata = (intptr_t)&lines,
     .enabled = true,
     .disabled_text = "well done cutie~",
-    .diabled_color = COLOR_BLU
+    .diabled_color = COLOR_BLU,
+    .textConfig = TEXT_CONF(30, COLOR_TEAL)
   };
   if(input.buf == NULL) {
     logs(Log_Fatal, "couldn't allocate input buffer");
