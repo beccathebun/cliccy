@@ -1,4 +1,5 @@
 #include "cliccy.h"
+#include <stdint.h>
 #if defined(_WIN32)
 // PEASYWINNOTY noty;
 #elif defined(__linux__)
@@ -9,7 +10,6 @@ static struct config_t {
   config_cfg_t config;
   config_data_t data;
 } cfg = {0};
-
 static const char *cfg_fmt = "[config] # configuration for cliccy :3\n"
 "\n"
 "# set any of these to false in order to\n"
@@ -22,8 +22,8 @@ static const char *cfg_fmt = "[config] # configuration for cliccy :3\n"
 "\n"
 "[config.timer]\n"
 "# minimum/maximum sleep between stuff happening in minutes\n"
-"minimum = %d\n"
-"maximum = %d\n"
+"minimum = %ld\n"
+"maximum = %ld\n"
 "\n"
 "# notifications\n"
 "[config.notifs]\n"
@@ -31,11 +31,11 @@ static const char *cfg_fmt = "[config] # configuration for cliccy :3\n"
 "\n"
 "[config.lines]\n"
 "# minimum/maximum amount of lines to write\n"
-"minimum = %d\n"
-"maximum = %d\n"
+"minimum = %ld\n"
+"maximum = %ld\n"
 "# minimum/maximum added when line doesn't match\n"
-"penalty_min = %d\n"
-"penalty_max = %d\n"
+"penalty_min = %ld\n"
+"penalty_max = %ld\n"
 "[data]\n"
 "# window/notification title\n"
 "title    = 'Cliccy :3'\n"
@@ -60,7 +60,7 @@ config_cfg_t default_cfg = {
   .notifs = {"notification_icon.png"},
   .timer = {5,20}
 };
-#define bs(b) (b ? "true" : "false")
+#define bs(b) ((b) ? "true" : "false")
 
 static char *config_fmt(config_cfg_t* c){
   return nob_temp_sprintf(cfg_fmt,
@@ -75,6 +75,51 @@ static char *config_fmt(config_cfg_t* c){
   c->lines.penalty_min,
   c->lines.penalty_max
   );
+}
+//33
+static void print_config(config_cfg_t *c) {
+  printf(""
+  FG_256(255)"╭─────────────────────────────────╮\n"
+  FG_256(255)"│          Configuration          │\n"
+  "├╌╌╌╌╌╌╌╌"FG_256(51)"[config.features]"FG_256(255)"╌╌╌╌╌╌╌╌┤\n"
+  "│"FG_256(245)" # features enabled"FG_256(255)"              │\n"
+  "│"FG_256(213)"  lines  "FG_256(255)"= "FG_256(105)"%s"
+  FG_256(255)"                  │\n"
+  "│"FG_256(213)"  links  "FG_256(255)"= "FG_256(105)"%s"
+  FG_256(255)"                  │\n" 
+  "│"FG_256(213)"  notifs "FG_256(255)"= "FG_256(105)"%s"
+  FG_256(255)"                  │\n" 
+  "│"FG_256(213)"  popups "FG_256(255)"= "FG_256(105)"%s"
+  FG_256(255)"                  │\n" 
+  "├╌╌╌╌╌╌╌╌╌"FG_256(51)"[config.timer]"FG_256(255)"╌╌╌╌╌╌╌╌╌╌┤\n"
+  "│"FG_256(245)" # min/max sleep between         "FG_256(255)"│\n"
+  "│"FG_256(245)"   stuff happening in minutes    "FG_256(255)"│\n"
+  "│"FG_256(213)"  minimum "FG_256(255)"= "FG_256(121)"%03ld"
+  FG_256(255)"                  │\n" 
+  "│"FG_256(213)"  maximum "FG_256(255)"= "FG_256(121)"%03ld"
+  FG_256(255)"                  │\n" 
+  "├╌╌╌╌╌╌╌╌╌"FG_256(51)"[config.lines]"FG_256(255)"╌╌╌╌╌╌╌╌╌╌┤\n"
+  "│"FG_256(245)" # min/max lines to write        "FG_256(255)"│\n"
+  "│"FG_256(213)"  minimum "FG_256(255)"= "FG_256(121)"%03ld"
+  FG_256(255)"                  │\n" 
+  "│"FG_256(213)"  maximum "FG_256(255)"= "FG_256(121)"%03ld"
+  FG_256(255)"                  │\n" 
+  "│"FG_256(245)" # min/max penalty               "FG_256(255)"│\n"
+  "│"FG_256(213)"  penalty_min "FG_256(255)"= "FG_256(121)"%03ld"
+  FG_256(255)"              │\n" 
+  "│"FG_256(213)"  penalty_max "FG_256(255)"= "FG_256(121)"%03ld"
+  FG_256(255)"              │\n"
+  "╰─────────────────────────────────╯\n",
+  bs(c->feat.lines),
+  bs(c->feat.links),
+  bs(c->feat.notifs),
+  bs(c->feat.popups),
+  c->timer.minimum,
+  c->timer.maximum,
+  c->lines.minimum,
+  c->lines.maximum,
+  c->lines.penalty_min,
+  c->lines.penalty_max);
 }
 
 #define swap(t,a,b) do{ t tmp = a; a = b; b = tmp;}while(0)
@@ -168,15 +213,8 @@ static bool parse_config(const char *path) {
     strcpy(str, val.u.s);
     da_append(&cfg.data.links, str);
   }
-#if defined(DEBUG) && !defined(_WIN32)
-  structInfo cfg_info[] = {
-    {
-      .data = &cfg,
-      .structName = "config_t",
-      .level = 0
-    }
-  };
-  pprint_struct("cfg", cfg_info, ARRAY_SIZE(cfg_info));
+#if defined(DEBUG)
+  print_config(&cfg.config);
 #endif //DEBUG
 defer:
   free(errbuf);
@@ -254,10 +292,7 @@ void HandleClayErrors(Clay_ErrorData errorData) {
         Clay_SetMaxMeasureTextCacheWordCount(Clay__maxMeasureTextCacheWordCount * 2);
     }
 }
-bool is_time(time_t timer) {
-  double diff = difftime(time(NULL), timer);
-  return diff >= 0.0;
-}
+
 Clickslut_Action rand_action() {
   int action = rand() % CA_COUNT;
   assert(action < CA_COUNT);
@@ -684,6 +719,11 @@ void input_submit(Input *conf) {
   }
 }
 
+void test_timeout(intptr_t data) {
+  int *d = (int*)data;
+  logs(Log_Info, "meooooow %d", (*d)++);
+}
+
 bool lines_new() {
   rl_init(500,600);
   LinesCfg lines = {
@@ -707,6 +747,7 @@ bool lines_new() {
     logs(Log_Fatal, "couldn't allocate input buffer");
     exit(-1);
   }
+  int counter = 0;
   bool lines_done = false;
   while(!WindowShouldClose() && !lines_done) {
     if(!lines.done) {
@@ -856,6 +897,10 @@ int main(int argc, char **argv)
   if(argc > 0) {
     if(streq(argv[0], "test")) 
       return_defer(test_main(argc, argv));
+    else if(streq(argv[0], "config")) {
+      print_config(&cfg.config);
+      return 0;
+    }
   }
   time_t timer = rand_time();
   bool quit = false;
