@@ -51,7 +51,7 @@ static struct conf_t conf = {0};
 //meson setup -Dprefix=/home/rebecca/code/c/something/resources/libnotify -Dman=false -Dgtk_doc=false -Ddocbook_docs=disabled -Dintrospection=disabled -Ddefault_library=static --reconfigure build
 //"meson","setup","-Dprefix=../resources/libnotify","-Dman=false","-Dgtk_doc=false","-Ddocbook_docs=disabled","-Dintrospection=disabled","-Ddefault_library=static","--reconfigure","build"
 bool build_notify(Cmd *cmd) {
-  if(!conf.force && file_exists("resources/libnotify/lib64/libnotify.a")) {
+  if(file_exists("resources/libnotify/lib64/libnotify.a")) {
     logs(Log_Info, "libnotify already built :3");
     return true;
   }
@@ -76,7 +76,7 @@ defer:
 }
 
 bool build_raylib(Cmd *cmd) {
-  if(!conf.force && file_exists("resources/raylib/lib64/libraylib.a")) {
+  if(file_exists("resources/raylib/lib64/libraylib.a")) {
     logs(Log_Info, "raylib already built :3");
     return true;
   }
@@ -176,7 +176,7 @@ void print_help(char *program_name) {
   printf("|   \e[96;1mrun\e[0m     - run app after building           |\n");
   printf("|   \e[96;1mwin\e[0m     - compile using mingw64            |\n");
   printf("|            (doesn't do anything on windows)  |\n");
-  printf("|   \e[96;1mtest\e[0m    - run app with 'test' argument     |\n");
+  // printf("|   \e[96;1mtest\e[0m    - run app with 'test' argument     |\n");
   printf("|   \e[96;1mdebug\e[0m   - compile app with -DDEBUG         |\n");
   printf("|   \e[96;1mforce\e[0m   - force compile everything         |\n");
   printf("|   \e[96;1minstall\e[0m - install app with autostart       |\n");
@@ -211,10 +211,10 @@ int main(int argc, char **argv) {
       conf.force = true;
     } else if(conf.run) {
       cmd_append(&args, val);
-      da_append_many(&args, argv, argc);
+      if(argc > 0) da_append_many(&args, argv, argc);
       break;
     } else {
-      nob_log(WARNING, "unknown flag: %s", val);
+      nob_log(ERROR, "unknown flag: %s", val);
       print_help(program);
       return 1;
     }
