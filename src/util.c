@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
@@ -16,7 +17,10 @@ static int rand_range(int min, int max)
     int diff = max-min;
     return (int) (((double)(diff+1)/RAND_MAX) * rand() + min);
 }
-
+bool is_time(time_t timer) {
+  double diff = difftime(time(NULL), timer);
+  return diff >= 0.0;
+}
 bool __startsWith_(const char *pre, const char *str, bool ci)
 {
     size_t lenpre = strlen(pre),
