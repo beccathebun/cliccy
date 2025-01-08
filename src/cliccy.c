@@ -10,6 +10,135 @@ static struct config_t {
   config_cfg_t config;
   config_data_t data;
 } cfg = {0};
+
+// Return status for strtod_s().
+// Higher values are more problematic.
+typedef enum {
+  STRTOD_OK,
+  STRTOD_NOTFOUND,
+  STRTOD_UNDERFLOW,
+  STRTOD_OVERFLOW,
+  STRTOD_N
+} STRTOD_T;
+/*
+Convert a pointer to a string to double and saves its value in *dest.
+Return conversion status.
+
+`errno` is temporarily cleared by this function.
+ its original value is restored afterwards.
+
+returns `STRTOD_T` indicating error from `strtod`
+`**res` is the endpointer for `strtod`, trimmed from leading whitespace
+*/
+STRTOD_T strtod_s(double *dest, const char *s, char **res) {
+
+  char *_res;
+  if(res == NULL) res = &_res;
+  STRTOD_T result = STRTOD_OK;
+  int errno_original = errno;
+  errno = 0;
+  *dest = strtod(s, res);
+
+  if (s == *res) return_defer(STRTOD_NOTFOUND);
+
+  while (isspace((unsigned char ) (*res)[0])) (*res)++;
+
+  if (errno == ERANGE && fabs(*dest) == HUGE_VAL)
+    return_defer(STRTOD_OVERFLOW);
+
+  if (errno == ERANGE && fabs(*dest) <= DBL_MIN)
+    return_defer(STRTOD_UNDERFLOW);
+  if(errno) logs(Log_Warn,
+    "strtod_s: Uncaught exception (%s)",
+    strerror(errno));
+defer:
+  errno = errno_original;
+  return result;
+}
+typedef enum {
+  STRTOL_OK,
+  STRTOL_NOTFOUND,
+  STRTOL_UNDERFLOW,
+  STRTOL_OVERFLOW,
+  STRTOL_N
+} STRTOL_T;
+/*
+Convert a pointer to a string to signed long and saves its value in *dest.
+Return conversion status.
+
+`errno` is temporarily cleared by this function.
+ its original value is restored afterwards.
+
+returns `STRTOL_T` indicating error from `strtol`
+`**res` is the endpointer for `strtol`, trimmed from leading whitespace
+*/
+STRTOL_T strtol_s(long *dest, const char *s, char **res, int base) {
+
+  char *_res;
+  if(res == NULL) res = &_res;
+  STRTOL_T result = STRTOL_OK;
+  int errno_original = errno;
+  errno = 0;
+  *dest = strtol(s, res, base);
+  
+  if (s == *res) return_defer(STRTOL_NOTFOUND);
+
+  while (isspace((unsigned char ) (*res)[0])) (*res)++;
+
+  if (errno == ERANGE && *dest == LONG_MAX)
+    return_defer(STRTOL_OVERFLOW);
+
+  if (errno == ERANGE && *dest == LONG_MIN)
+    return_defer(STRTOL_UNDERFLOW);
+  if(errno) logs(Log_Warn,
+    "strtol_s: Uncaught exception (%s)",
+    strerror(errno));
+defer:
+  errno = errno_original;
+  return result;
+}
+
+// Return status for strtoul_s().
+// Higher values are more problematic.
+typedef enum {
+  STRTOUL_OK,
+  STRTOUL_NOTFOUND,
+  STRTOUL_OVERFLOW,
+  STRTOUL_N
+} STRTOUL_T;
+/*
+Convert a pointer to a string to unsigned long and saves its value in *dest.
+Return conversion status.
+
+`errno` is temporarily cleared by this function.
+ its original value is restored afterwards.
+
+returns `STRTOUL_T` indicating error from `strtoul`
+`**res` is the endpointer for `strtoul`, trimmed from leading whitespace
+*/
+STRTOUL_T strtoul_s(unsigned long *dest, const char *s, char **res, int base) {
+
+  char *_res;
+  if(res == NULL) res = &_res;
+  STRTOUL_T result = STRTOUL_OK;
+  int errno_original = errno;
+  errno = 0;
+  *dest = strtoul(s, res, base);
+
+  if (s == *res) return_defer(STRTOUL_NOTFOUND);
+
+  while (isspace((unsigned char ) (*res)[0])) (*res)++;
+
+  if (errno == ERANGE && *dest == ULONG_MAX)
+    return_defer(STRTOUL_OVERFLOW);
+  if(errno) logs(Log_Warn,
+    "strtoul_s: Uncaught exception (%s)",
+    strerror(errno));
+defer:
+  errno = errno_original;
+  return result;
+}
+
 #define CFG_FMT "[config] # configuration for cliccy :3\n"\
 "\n"\
 "# set any of these to false in order to\n"\
@@ -991,15 +1120,37 @@ bool config_main(int argc, char **argv) {
           //to not throw false errors
           //or remove wrong lines
           while(argc > 0) {
-            int idx = atoi(shift(argv, argc));
-            arr[count++] = idx;
+            long idx;
+            char *s = shift(argv,argc);
+            STRTOL_T res = strtol_s(&idx, s, NULL, 10);
+            if(res == STRTOL_NOTFOUND) {
+              logs(Log_Error,"value provided is not an integer: %s", s);
+              return false;
+            }
+            if(res != STRTOL_OK) {
+              return false;
+            }
+            // NOTE: this is needed bc am lazy and cba to also write strtoi_s :b
+            if(idx < INT_MIN){
+              logs(Log_Error, "integer underflow");
+              goto err;
+            }
+            if(idx > INT_MAX) {
+              logs(Log_Error, "integer overflow");
+              goto err;
+            }
+            arr[count++] = (int)idx;
           }
           qsort(arr, count, sizeof(int), comp_dec);
           for(int i = 0; i < count; ++i) {
-            if(!remove_line(arr[i]))return false;
+            if(!remove_line(arr[i])) return false;
           }
           free(arr);
           print_lines();
+          return true;
+          err:
+            free(arr);
+            return false;
         } else if(streq(subcmd, "add")) {
           if(argc <= 0) {
             logs(Log_Error, "no line provided");
