@@ -128,7 +128,11 @@ typedef struct {
 typedef struct {
   size_t capacity;
   size_t count;
-  char **items;
+  union {
+    char **items;
+    char *items_arr[10];
+  };
+  bool static_arr;
 } CliccyStrs;
 
 typedef struct {
@@ -161,6 +165,7 @@ typedef struct config_data_t {
   CliccyStrs lines;
   CliccyStrs petnames;
   CliccyStrs links;
+  
 } config_data_t;
 
 #endif // CLICCY_H
