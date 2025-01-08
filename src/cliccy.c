@@ -97,6 +97,22 @@ defer:
   errno = errno_original;
   return result;
 }
+typedef enum {
+  STRTOI_OK,
+  STRTOI_NOTFOUND,
+  STRTOI_UNDERFLOW,
+  STRTOI_OVERFLOW,
+  STRTOI_N
+} STRTOI_T;
+STRTOI_T strtoi_s(int *dest, const char *s, char **res, int base) {
+  long tmp;
+  STRTOL_T result = strtol_s(&tmp, s, res, base);
+  if(result != STRTOL_OK) return (STRTOI_T)result;
+  if(tmp < INT_MIN) return STRTOI_UNDERFLOW;
+  if(tmp > INT_MAX) return STRTOI_OVERFLOW;
+  *dest = (int)tmp;
+  return STRTOI_OK;
+}
 
 // Return status for strtoul_s().
 // Higher values are more problematic.
@@ -1120,26 +1136,17 @@ bool config_main(int argc, char **argv) {
           //to not throw false errors
           //or remove wrong lines
           while(argc > 0) {
-            long idx;
+            int idx;
             char *s = shift(argv,argc);
-            STRTOL_T res = strtol_s(&idx, s, NULL, 10);
-            if(res == STRTOL_NOTFOUND) {
+            STRTOI_T res = strtoi_s(&idx, s, NULL, 10);
+            if(res == STRTOI_NOTFOUND) {
               logs(Log_Error,"value provided is not an integer: %s", s);
               return false;
             }
-            if(res != STRTOL_OK) {
+            if(res != STRTOI_OK) {
               return false;
             }
-            // NOTE: this is needed bc am lazy and cba to also write strtoi_s :b
-            if(idx < INT_MIN){
-              logs(Log_Error, "integer underflow");
-              goto err;
-            }
-            if(idx > INT_MAX) {
-              logs(Log_Error, "integer overflow");
-              goto err;
-            }
-            arr[count++] = (int)idx;
+            arr[count++] = idx;
           }
           qsort(arr, count, sizeof(int), comp_dec);
           for(int i = 0; i < count; ++i) {
