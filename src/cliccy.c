@@ -10,70 +10,114 @@ static struct config_t {
   config_cfg_t config;
   config_data_t data;
 } cfg = {0};
-static const char *cfg_fmt = "[config] # configuration for cliccy :3\n"
-"\n"
-"# set any of these to false in order to\n"
-"# disable them\n"
-"[config.features]\n"
-"lines  = %s\n"
-"links  = %s\n"
-"notifs = %s\n"
-"popups = %s\n"
-"\n"
-"[config.timer]\n"
-"# minimum/maximum sleep between stuff happening in minutes\n"
-"minimum = %ld\n"
-"maximum = %ld\n"
-"\n"
-"# notifications\n"
-"[config.notifs]\n"
-"icon = 'notification_icon.png'\n"
-"\n"
-"[config.lines]\n"
-"# minimum/maximum amount of lines to write\n"
-"minimum = %ld\n"
-"maximum = %ld\n"
-"# minimum/maximum added when line doesn't match\n"
-"penalty_min = %ld\n"
-"penalty_max = %ld\n"
-"[data]\n"
-"# window/notification title\n"
-"title    = 'Cliccy :3'\n"
-"# what cliccy calls you :3\n"
-"petnames = [\n"
-"  'love',\n"
-"  'cutie',\n"
-"  'pet',\n"
-"  'my bunny',\n"
-"  'my puppy',\n"
-"  'my darling'\n"
-"]\n"
-"# what lines cliccy asks you to write\n"
-"lines = ['i am a good bunny']\n"
-"# links to open\n"
-"links    = [\n"
-"  'https://google.com'\n"
-"]\n";
-config_cfg_t default_cfg = {
-  .feat = {true,true,true,true},
-  .lines = {3,20,1,5},
-  .notifs = {"notification_icon.png"},
-  .timer = {5,20}
+#define CFG_FMT "[config] # configuration for cliccy :3\n"\
+"\n"\
+"# set any of these to false in order to\n"\
+"# disable them\n"\
+"[config.features]\n"\
+"lines  = %s\n"\
+"links  = %s\n"\
+"notifs = %s\n"\
+"popups = %s\n"\
+"\n"\
+"[config.timer]\n"\
+"# minimum/maximum sleep between stuff happening in minutes\n" \
+"minimum = %ld\n"\
+"maximum = %ld\n"\
+"\n"\
+"# notifications\n"\
+"[config.notifs]\n"\
+"icon = 'notification_icon.png'\n"\
+"\n"\
+"[config.lines]\n"\
+"# minimum/maximum amount of lines to write\n"\
+"minimum = %ld\n"\
+"maximum = %ld\n"\
+"# minimum/maximum added when line doesn't match\n"\
+"penalty_min = %ld\n"\
+"penalty_max = %ld\n"\
+"[data]\n"\
+"# window/notification title\n"\
+"title    = 'Cliccy :3'\n"\
+"# what cliccy calls you :3\n"\
+"petnames = %s\n"\
+"# what lines cliccy asks you to write\n"\
+"lines = %s\n"\
+"# links to open\n"\
+"links    = %s\n"
+struct config_t default_cfg = {
+  .config = {
+    .feat = {true,true,true,true},
+    .lines = {3,20,1,5},
+    .notifs = {"notification_icon.png"},
+    .timer = {5,20}
+  },
+  .data = {
+    .title = "Cliccy :3",
+    .petnames = {
+      .count = 6,
+      .items_arr = {
+        "love",
+        "cutie",
+        "pet",
+        "my bunny",
+        "my puppy",
+        "my darling"
+      },
+      .static_arr = true
+    },
+    .links = {
+      .count = 1,
+      .items_arr = {
+        "https://google.com"
+      },
+      .static_arr = true
+    },
+    .lines = {
+      .count = 1,
+      .items_arr = {
+        "i am a good bunny"
+      },
+      .static_arr = true
+    }
+    
+  }
 };
 #define bs(b) ((b) ? "true" : "false")
 
-static char *config_fmt(config_cfg_t* c){
-  return nob_temp_sprintf(cfg_fmt,
-  bs(c->feat.lines),
-  bs(c->feat.links),
-  bs(c->feat.notifs),
-  bs(c->feat.popups),
-  c->timer.minimum,
-  c->timer.maximum,
-  c->lines.minimum,
-  c->lines.maximum,
-  c->lines.penalty_min,
-  c->lines.penalty_max
+char *cliccystrs_to_toml(CliccyStrs *strs, int rm_idx) {
+  String_Builder sb = {0};
+  sb_append_cstr(&sb, "[\n");
+  for(size_t i = 0; i < strs->count; ++i) {
+    if(rm_idx >= 0 && i == rm_idx) continue;
+    sb_append_cstr(&sb, "  '");
+    sb_append_cstr(&sb, strs->static_arr ? strs->items_arr[i] : strs->items[i]);
+    sb_append_cstr(&sb, "'");
+    if(i < (strs->count - 1)) {
+      sb_append_cstr(&sb, ",");
+    }
+    sb_append_cstr(&sb, "\n");
+  }
+  sb_append_cstr(&sb, "]\n");
+  sb_append_null(&sb);
+  return sb.items;
+}
+
+static char *config_fmt(struct config_t* c){
+  return nob_temp_sprintf(CFG_FMT,
+  bs(c->config.feat.lines),
+  bs(c->config.feat.links),
+  bs(c->config.feat.notifs),
+  bs(c->config.feat.popups),
+  c->config.timer.minimum,
+  c->config.timer.maximum,
+  c->config.lines.minimum,
+  c->config.lines.maximum,
+  c->config.lines.penalty_min,
+  c->config.lines.penalty_max,
+  cliccystrs_to_toml(&c->data.petnames, -1),
+  cliccystrs_to_toml(&c->data.lines, -1),
+  cliccystrs_to_toml(&c->data.links, -1)
   );
 }
 //33
@@ -146,18 +190,18 @@ static bool parse_config(const char *path) {
   toml_value_t feat_links  = toml_table_bool(feat_tbl, "links");
   toml_value_t feat_lines  = toml_table_bool(feat_tbl, "lines");
   toml_value_t feat_popups = toml_table_bool(feat_tbl, "popups");
-  if(!feat_notifs.ok) feat_notifs.u.b = default_cfg.feat.notifs;
-  if(!feat_links.ok)  feat_links.u.b  = default_cfg.feat.links;
-  if(!feat_lines.ok)  feat_lines.u.b  = default_cfg.feat.lines;
-  if(!feat_popups.ok) feat_popups.u.b = default_cfg.feat.popups;
+  if(!feat_notifs.ok) feat_notifs.u.b = default_cfg.config.feat.notifs;
+  if(!feat_links.ok)  feat_links.u.b  = default_cfg.config.feat.links;
+  if(!feat_lines.ok)  feat_lines.u.b  = default_cfg.config.feat.lines;
+  if(!feat_popups.ok) feat_popups.u.b = default_cfg.config.feat.popups;
   cfg.config.feat.popups = feat_popups.u.b;
   cfg.config.feat.lines  = feat_lines.u.b;
   cfg.config.feat.links  = feat_links.u.b;
   cfg.config.feat.notifs = feat_notifs.u.b;
   toml_value_t timer_min = toml_table_int(timer_tbl, "minimum");
   toml_value_t timer_max = toml_table_int(timer_tbl, "maximum");
-  if(!timer_min.ok) timer_min.u.i = default_cfg.timer.minimum;
-  if(!timer_max.ok) timer_max.u.i = default_cfg.timer.maximum;
+  if(!timer_min.ok) timer_min.u.i = default_cfg.config.timer.minimum;
+  if(!timer_max.ok) timer_max.u.i = default_cfg.config.timer.maximum;
   if(timer_min.u.i > timer_max.u.i) swap(int64_t, timer_min.u.i,timer_max.u.i);
   cfg.config.timer.minimum = timer_min.u.i;
   cfg.config.timer.maximum = timer_max.u.i;
@@ -173,10 +217,10 @@ static bool parse_config(const char *path) {
     = toml_table_int(lines_tbl, "penalty_max");
   toml_value_t lines_pen_min 
     = toml_table_int(lines_tbl, "penalty_min");
-  if(!lines_min.ok) lines_min.u.i = default_cfg.lines.minimum;
-  if(!lines_max.ok) lines_max.u.i = default_cfg.lines.maximum;
-  if(!lines_pen_min.ok) lines_pen_min.u.i = default_cfg.lines.penalty_min;
-  if(!lines_pen_max.ok) lines_pen_max.u.i = default_cfg.lines.penalty_max;
+  if(!lines_min.ok) lines_min.u.i = default_cfg.config.lines.minimum;
+  if(!lines_max.ok) lines_max.u.i = default_cfg.config.lines.maximum;
+  if(!lines_pen_min.ok) lines_pen_min.u.i = default_cfg.config.lines.penalty_min;
+  if(!lines_pen_max.ok) lines_pen_max.u.i = default_cfg.config.lines.penalty_max;
   if(lines_min.u.i > lines_max.u.i) 
     swap(int64_t, lines_min.u.i,lines_max.u.i);
   if(lines_pen_min.u.i > lines_pen_max.u.i) 
@@ -192,6 +236,7 @@ static bool parse_config(const char *path) {
   if(!title.ok) title.u.s = "Cliccy :3";
   cfg.data.title = CALLOC(strlen(title.u.s), sizeof(char));
   strcpy(cfg.data.title, title.u.s);
+  cfg.data.petnames.count = 0;
   for(int i = 0; i < toml_array_len(petnames); ++i) {
     toml_value_t val = toml_array_string(petnames,i);
     if(!val.ok) return_defer(false);
@@ -199,6 +244,7 @@ static bool parse_config(const char *path) {
     strcpy(str, val.u.s);
     da_append(&cfg.data.petnames, str);
   }
+  cfg.data.lines.count = 0;
   for(int i = 0; i < toml_array_len(lines); ++i) {
     toml_value_t val = toml_array_string(lines,i);
     if(!val.ok) return_defer(false);
@@ -206,6 +252,7 @@ static bool parse_config(const char *path) {
     strcpy(str, val.u.s);
     da_append(&cfg.data.lines, str);
   }
+  cfg.data.links.count = 0;
   for(int i = 0; i < toml_array_len(links); ++i) {
     toml_value_t val = toml_array_string(links,i);
     if(!val.ok) return_defer(false);
@@ -792,13 +839,8 @@ time_t rand_time() {
   return time_offset_min(min);
 }
 
-bool init_config(char *path) {
+char *get_conf_path() {
   char *conf_dir;
-  char *conf_file;
-  if(path != NULL) {
-    conf_file = path;
-    goto mkfile;
-  }
 #if defined(__linux__)
   if((conf_dir = getenv("XDG_CONFIG_HOME")) == NULL) {
     char *home = getenv("HOME");
@@ -812,9 +854,13 @@ bool init_config(char *path) {
 #endif
   assert(conf_dir != NULL && "config directory null");
   char *cliccy_dir = concat(conf_dir, PATHSEP "cliccy");
-  if(!nob_mkdir_if_not_exists(cliccy_dir)) return false;
-  conf_file = concat(cliccy_dir, PATHSEP "config.toml");
-mkfile:
+  return concat(cliccy_dir, PATHSEP "config.toml");
+}
+
+bool init_config(char *path) {
+  char *conf_file;
+  if(path != NULL) conf_file = path;
+  else conf_file = get_conf_path();
   if(!nob_file_exists(conf_file)) {
     const char *conf = config_fmt(&default_cfg);
     if(!nob_write_entire_file(
@@ -876,7 +922,7 @@ Result init() {
 
 
 bool test_main(int argc, char **argv) {
-  const char *test = shift(argv,argc);
+  const char *cmd = shift(argv,argc);
   char *feat = shift(argv,argc);
   clay_init();
   if(streq(feat, "q"))
@@ -886,6 +932,96 @@ bool test_main(int argc, char **argv) {
   return false;
 }
 
+void print_lines() {
+  CliccyStrs *lns = &cfg.data.lines;
+  for(int i = 0; i < lns->count; ++i) {
+    printf(FG_256(198)"[%d]" FG_256(255) ": " FG_256(251) "\"%s\"\n", i, lns->items[i]);
+  }
+}
+
+bool remove_line(int idx) {
+  CliccyStrs *lns = &cfg.data.lines;
+  const char *conf_file = get_conf_path();
+  if(idx < 0 || idx >= lns->count) {
+    logs(Log_Error, "invalid index: %d", idx);
+    print_lines();
+    return false;
+  }
+  const char *config = nob_temp_sprintf(CFG_FMT,
+    bs(cfg.config.feat.lines),
+    bs(cfg.config.feat.links),
+    bs(cfg.config.feat.notifs),
+    bs(cfg.config.feat.popups),
+    cfg.config.timer.minimum,
+    cfg.config.timer.maximum,
+    cfg.config.lines.minimum,
+    cfg.config.lines.maximum,
+    cfg.config.lines.penalty_min,
+    cfg.config.lines.penalty_max,
+    cliccystrs_to_toml(&cfg.data.petnames, -1),
+    cliccystrs_to_toml(&cfg.data.lines, idx),
+    cliccystrs_to_toml(&cfg.data.links, -1)
+  );
+  if(!nob_write_entire_file(conf_file, config, strlen(config))) return false;
+  temp_reset();
+  return parse_config(conf_file);
+}
+int comp_dec(const void* a, const void* b) {
+  return (*(int*)b - *(int*)a );
+}
+bool config_main(int argc, char **argv) {
+  const char *cmd_name = shift(argv,argc);
+  if(argc > 0) {
+    char *cmd = shift(argv, argc);
+    if(streq(cmd, "lines")) {
+      if(argc > 0) {
+        char *subcmd = shift(argv, argc);
+        if(streq(subcmd, "show")) {
+          print_lines();
+        } else if(streq(subcmd, "remove")) {
+          if(argc <= 0) {
+            logs(Log_Error, "no index provided");
+            logs(Log_Info, "please provide one of the following indices:");
+            print_lines();
+            return false;
+          }
+          int *arr = CALLOC(argc, sizeof(int));
+          int count = 0;
+          // NOTE: need to sort the indices descending
+          //to not throw false errors
+          //or remove wrong lines
+          while(argc > 0) {
+            int idx = atoi(shift(argv, argc));
+            arr[count++] = idx;
+          }
+          qsort(arr, count, sizeof(int), comp_dec);
+          for(int i = 0; i < count; ++i) {
+            if(!remove_line(arr[i]))return false;
+          }
+          free(arr);
+          print_lines();
+        } else if(streq(subcmd, "add")) {
+          if(argc <= 0) {
+            logs(Log_Error, "no line provided");
+            logs(Log_Info, "please provide a line to add");
+            return false;
+          }
+          while(argc > 0) {
+            char *line = shift(argv, argc);
+            da_append(&cfg.data.lines, line);
+          }
+          const char *conf_file = get_conf_path();
+          char *config = config_fmt(&cfg);
+          if(!nob_write_entire_file(conf_file, config, strlen(config))) return false;
+          if(!parse_config(conf_file)) return false;
+          print_lines();
+        }
+      } else print_lines();
+      
+    }
+  } else print_config(&cfg.config);
+  return true;
+}
 
 
 int main(int argc, char **argv)
@@ -897,10 +1033,8 @@ int main(int argc, char **argv)
   if(argc > 0) {
     if(streq(argv[0], "test")) 
       return_defer(test_main(argc, argv));
-    else if(streq(argv[0], "config")) {
-      print_config(&cfg.config);
-      return 0;
-    }
+    else if(streq(argv[0], "config"))
+      return_defer(config_main(argc, argv));
   }
   time_t timer = rand_time();
   bool quit = false;
