@@ -1110,17 +1110,83 @@ Result init() {
   return Res_Success;
 }
 
+void help_config(char *program_name) {
+  char *pfile = program_name + strlen(program_name);
+  for (; pfile > program_name; pfile--) {
+    if ((*pfile == '\\') || (*pfile == '/')) {
+      pfile++;
+      break;
+    }
+  }
+  printf("|----------- \e[95;1mview/modify configuration\e[0m ---------|\n");
+  printf("    \e[94;1musage:\e[0m \e[96;1m."PATHSEP"%s config\e[0m [flag]\n", pfile);
+  printf("|-------------------- \e[95;1mflags:\e[0m -------------------|\n");
+  printf("|   \e[96;1mshow\e[0m              - view current config     |\n");
+  printf("|   \e[96;1mlines (show)\e[0m      - print all lines         |\n");
+  printf("|   \e[96;1mlines add [line]\e[0m  - add line(s)             |\n");
+  printf("|   \e[96;1mlines remove [idx]\e[0m- remove line(s) at [idx] |\n");
+  // printf("|   \e[96;1mhelp [flag]\e[0m   - help message for flag       |\n");
+  printf("|-----------------------------------------------|\n");
+}
+
+void help_test(char *program_name) {
+  char *pfile = program_name + strlen(program_name);
+  for (; pfile > program_name; pfile--) {
+    if ((*pfile == '\\') || (*pfile == '/')) {
+      pfile++;
+      break;
+    }
+  }
+  printf("|---------------- \e[95;1mtest a feature\e[0m ---------------|\n");
+  printf("    \e[94;1musage:\e[0m \e[96;1m."PATHSEP"%s test\e[0m [flag]\n", pfile);
+  printf("|-------------------- \e[95;1mflags:\e[0m -------------------|\n");
+  printf("|   \e[96;1mnotif\e[0m        - show a notification          |\n");
+  printf("|   \e[96;1mquestion\e[0m     - show a question dialog       |\n");
+  printf("|   \e[96;1mline\e[0m         - open a linewriting dialog    |\n");
+  printf("|-----------------------------------------------|\n");
+}
+
+void print_help(char *program_name) {
+  char *pfile = program_name + strlen(program_name);
+  for (; pfile > program_name; pfile--) {
+    if ((*pfile == '\\') || (*pfile == '/')) {
+      pfile++;
+      break;
+    }
+  }
+  printf("|---------- \e[95;1mfun program for cuties :3\e[0m ---------|\n");
+  printf("    \e[94;1musage:\e[0m \e[96;1m."PATHSEP"%s\e[0m [flag(s)]\n", pfile);
+  printf("|------------------- \e[95;1mflags:\e[0m -------------------|\n");
+  printf("|   \e[96;1mconfig\e[0m        - view/modify config         |\n");
+  printf("|   \e[96;1mtest\e[0m          - test features              |\n");
+  printf("|   \e[96;1mhelp\e[0m          - show this message          |\n");
+  printf("|   \e[96;1mhelp [flag]\e[0m   - help message for flag      |\n");
+  printf("|----------------------------------------------|\n");
+}
 
 
 bool test_main(int argc, char **argv) {
   const char *cmd = shift(argv,argc);
   char *feat = shift(argv,argc);
   clay_init();
-  if(streq(feat, "q"))
+  if(streq(feat, "q") || streq(feat, "question"))
     return question_new();
-  else if(streq(feat, "l"))
+  else if(streq(feat, "l")||streq(feat, "line"))
     return lines_new();
+  else if(streq(feat, "n")||streq(feat, "notif"))
+    return notif_new();
   return false;
+}
+bool help_main(char *program_name, int argc, char **argv) {
+  const char *cmd = shift(argv,argc);
+  if(argc > 0) {
+    char *feat = shift(argv,argc);
+    if(streq(feat, "config"))
+      help_config(program_name);
+    else if(streq(feat, "t")||streq(feat, "test"))
+      help_test(program_name);
+  } else print_help(program_name);
+  return true;
 }
 
 void print_lines() {
@@ -1231,8 +1297,9 @@ bool config_main(int argc, char **argv) {
 int main(int argc, char **argv)
 {
   seed();
-  const char *program_name = shift(argv, argc);
+  char *program_name = shift(argv, argc);
   bool result              = true;
+  if(argc > 0 && streq(argv[0], "help")) return_defer(help_main(program_name, argc, argv));
   if(!init_config(NULL)) return_defer(false);
   if(argc > 0) {
     if(streq(argv[0], "test")) 
