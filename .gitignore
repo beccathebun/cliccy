@@ -2,6 +2,7 @@ config.toml
 build.old
 resources/libnotify/*
 resources/raylib/*
+
 # Prerequisites
 *.d
 
@@ -71,3 +72,7 @@ cliccy
 resources/aud
 EasyWinNotification/
 EasyWinNotyCWrapper.h
+!resources/EasyWinNoty/EasyWinNotification.dll
+!resources/EasyWinNoty/EasyWinNotification.lib
+!resources/EasyWinNoty/EasyWinNotification.pdb
+!include/EasyWinNotyCWrapper.h
