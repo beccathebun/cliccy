@@ -23,11 +23,13 @@ struct conf_t {
   bool force;
 };
 
-#define CFLAGS "-std=c23","-D_DEFAULT_SOURCE","-Wno-missing-braces","-Wno-unused-value","-Wno-pointer-sign", "-ggdb"
-#define INCLUDES "-Iinclude", "-I.","-Iexternal","-I/usr/include/gdk-pixbuf-2.0","-I/usr/include/glib-2.0","-I/usr/lib64/glib-2.0/include","-I/usr/include/libpng16","-I/usr/include/webp","-DWITH_GZFILEOP","-I/usr/include/libmount","-I/usr/include/blkid","-I/usr/include/sysprof-6","-pthread"
+
+
 
 
 #ifdef _WIN32
+# define INCLUDES "-Iinclude", "-I.","-Iexternal"
+# define CFLAGS "-std=c23","-D_DEFAULT_SOURCE","-Wno-missing-braces","-Wno-unused-value","-Wno-pointer-sign", "-Z"
 # define PATHSEP "\\"
 # define CC "clang-cl"
 # define CC_WIN CC
@@ -35,6 +37,10 @@ struct conf_t {
 # define LDLIBS_WIN LDLIBS
 static struct conf_t conf = {.windows=true};
 #elif  __linux__
+# define INCLUDES "-Iinclude", "-I.","-Iexternal","-I/usr/include/gdk-pixbuf-2.0","-I/usr/include/glib-2.0","-I/usr/lib64/glib-2.0/include","-I/usr/include/libpng16","-I/usr/include/webp","-DWITH_GZFILEOP","-I/usr/include/libmount","-I/usr/include/blkid","-I/usr/include/sysprof-6","-pthread"
+# define INCLUDES_WIN "-Iinclude", "-I.","-Iexternal"
+# define CFLAGS "-std=c23","-D_DEFAULT_SOURCE","-Wno-missing-braces","-Wno-unused-value","-Wno-pointer-sign", "-ggdb"
+# define CFLAGS_WIN "-std=c23","-D_DEFAULT_SOURCE","-Wno-missing-braces","-Wno-unused-value","-Wno-pointer-sign", "-Z"
 # define PATHSEP "/"
 # define CC "gcc"
 # define CC_WIN "x86_64-w64-mingw32-gcc"
@@ -109,24 +115,31 @@ const char *input_paths[] = {
   "include/clay_renderer_raylib.c"
 };
 
-bool build_app(Cmd *cmd) {
-  if(!conf.force && !nob_needs_rebuild("./cliccy", input_paths, ARRAY_LEN(input_paths))){
-    logs(Log_Info, "app already latest version :3");
+bool build_app_win(Cmd *cmd) {
+  if(!conf.force && !nob_needs_rebuild("./cliccy.exe", input_paths, ARRAY_LEN(input_paths))){
+    logs(Log_Info, "cliccy.exe already latest version :3");
     return true;
   }
-  cmd_append(cmd, conf.windows ? CC_WIN : CC, "-o", "cliccy");
+  cmd_append(cmd, CC_WIN, "-o", "cliccy");
+  cmd_append(cmd, CFLAGS);
+  if(conf.debug) cmd_append(cmd, "-DDEBUG");
+  cmd_append(cmd, INCLUDES_WIN);
+  cmd_append(cmd, "src/cliccy.c");
+  cmd_append(cmd, LDLIBS_WIN);
+  return cmd_run_sync_and_reset(cmd);
+}
+
+bool build_app(Cmd *cmd) {
+  if(!conf.force && !nob_needs_rebuild("./cliccy", input_paths, ARRAY_LEN(input_paths))){
+    logs(Log_Info, "cliccy already latest version :3");
+    return true;
+  }
+  cmd_append(cmd,CC, "-o", "cliccy");
   cmd_append(cmd,CFLAGS);
   if(conf.debug) cmd_append(cmd, "-DDEBUG");
   cmd_append(cmd, INCLUDES);
   cmd_append(cmd, "src/cliccy.c");
-  if(conf.windows){
-    // cmd_append(cmd, "resources/EasyWinNoty/EasyWinNotification.lib");
-    // cmd_append(cmd, "resources/EasyWinNoty/EasyWinNotyC.lib");
-    cmd_append(cmd, LDLIBS_WIN);
-  }
-  else
-    cmd_append(cmd, LDLIBS);
-  
+  cmd_append(cmd, LDLIBS);
   return cmd_run_sync_and_reset(cmd);
 }
 
@@ -177,8 +190,6 @@ void print_help(char *program_name) {
   printf("|------------------- \e[95;1mflags:\e[0m -------------------|\n");
   //printf("|   \e[96;1mrl\e[0m    - build raylib                      |\n");
   printf("|   \e[96;1mrun\e[0m     - run app after building           |\n");
-  printf("|   \e[96;1mwin\e[0m     - compile using mingw64            |\n");
-  printf("|            (doesn't do anything on windows)  |\n");
   // printf("|   \e[96;1mtest\e[0m    - run app with 'test' argument     |\n");
   printf("|   \e[96;1mdebug\e[0m   - compile app with -DDEBUG         |\n");
   printf("|   \e[96;1mforce\e[0m   - force compile everything         |\n");
@@ -201,8 +212,6 @@ int main(int argc, char **argv) {
     while(val[0] == '-') val++;
     if(strcmp(val, "debug") == 0) 
       conf.debug = true;
-    else if(strcmp(val, "win") == 0) 
-      conf.windows = true;
     else if(strcmp(val, "run") == 0) 
       conf.run = true;
     else if(strcmp(val, "help") == 0
@@ -222,10 +231,11 @@ int main(int argc, char **argv) {
       return 1;
     }
   }
+  if(!build_raylib(&cmd)) return 1;
 #ifdef __linux__
   if(!build_notify(&cmd)) return 1;
+  if(!build_app_win(&cmd)) return 1;
 #endif
-  if(!build_raylib(&cmd)) return 1;
   if(!build_app(&cmd)) return 1;
   if(conf.run) {
     cmd_append(&cmd, "./cliccy");
