@@ -46,7 +46,7 @@ opens links,sends notifications,line writing, random dialogs..
  - [clay](https://github.com/nicbarker/clay)
  - [raylib](https://github.com/raysan5/raylib)
  - [toml-c](https://github.com/arp242/toml-c)
- - [EasyWinNotification](https://github.com/bho3538/EasyWinNotification)
+ - [wintoastlibc](https://github.com/AlienCowEatCake/WinToastLibC)
 
 ### License
 

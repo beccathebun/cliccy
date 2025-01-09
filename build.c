@@ -48,7 +48,7 @@ static struct conf_t conf = {.windows=true};
 #   define LDLIBS "-Lraylib/src", "-Lresources/libnotify/lib64","-l:libraylib.a","-lGL","-lm","-lpthread","-ldl","-lrt","-l:libnotify.a","-lgdk_pixbuf-2.0","-lgio-2.0","-lgobject-2.0","-lglib-2.0", "-lwayland-client","-lwayland-cursor","-lwayland-egl","-lxkbcommon"
 #   else
 #   define LDLIBS "-Lraylib/src", "-Lresources/libnotify/lib64","-l:libraylib.a","-lGL","-lm","-lpthread","-ldl","-lrt","-l:libnotify.a","-lgdk_pixbuf-2.0","-lgio-2.0","-lgobject-2.0","-lglib-2.0","-lX11"
-#   define LDLIBS_WIN "-Lresources/raylib_mingw/lib","-Lresources/EasyWinNoty","-lEasyWinNotification", "-l:libraylib.a","-lopengl32","-lgdi32","-lwinmm","-lcomdlg32","-lole32","-static", "-lpthread"
+#   define LDLIBS_WIN "-Lresources/raylib_mingw/lib", "-l:libraylib.a","-lopengl32","-lgdi32","-lwinmm","-lcomdlg32","-lole32","-static", "-lpthread"
 static struct conf_t conf = {0};
 # endif
 #else
@@ -125,6 +125,7 @@ bool build_app_win(Cmd *cmd) {
   if(conf.debug) cmd_append(cmd, "-DDEBUG");
   cmd_append(cmd, INCLUDES_WIN);
   cmd_append(cmd, "src/cliccy.c");
+  cmd_append(cmd, "resources/wintoastlibc_x86/wintoastlibc.lib");
   cmd_append(cmd, LDLIBS_WIN);
   return cmd_run_sync_and_reset(cmd);
 }
