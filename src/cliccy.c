@@ -528,10 +528,56 @@ void dismiss_callback(
   notify_notification_close(notification, NULL);
   logs(LOG_TRACE, "notif dismissed :3");
 }
+#else
+DWORD __stdcall ToastCallback(PVOID pNoty, DWORD eventType, DWORD args, PVOID userData, PVOID userInputData) {
+	PEASYWINNOTY noty = (PEASYWINNOTY)pNoty;
+
+	switch (eventType) {
+		case EasyWinNoty_EventType_ActiveWithoutParams: {
+			link_new();
+		}; break;
+		case EasyWinNoty_EventType_ActiveWithParams: {
+			link_new();
+		}; break;
+		case EasyWinNoty_EventType_UserCancel: {
+			//printf("user close noty\n");
+		}; break;
+		case EasyWinNoty_EventType_ApplicationHide: {
+			//printf("noty closed by program\n");
+		}; break;
+		case EasyWinNoty_EventType_Timeout: {
+			//printf("noty closed by timeout\n");
+		}; break;
+	}
+
+	// if (userInputData) {
+	// 	LPWSTR text = EasyWinNoty_GetInputData(L"input1", userInputData);
+	// 	printf("%ls\n", text);
+	// 	CoTaskMemFree(text);
+	// }
+
+	return 0;
+}
 #endif //_WIN32
 bool notif_new() {
 #if defined(_WIN32)
-#warning "notifications not yet supported on windows"
+  PEASYWINNOTY noty = EasyWinNoty_CreateInstance();
+  if (!EasyWinNoty_IsSupportSystem(noty)) {
+		logs(Log_Error, "System does not support windows notification.");
+	}
+	
+	if (!EasyWinNoty_IsSupportAdvancedFeature(noty)) {
+		logs(Log_Warn, "System does not support advanced windows notification.");
+	}
+  EasyWinNoty_InitializeWithoutShortcut(noty, L"Cliccy :3", NULL, NULL, NULL, EasyWinNoty_TemplateType_Text02);
+  EasyWinNoty_SetText(noty, (LPCWSTR)arr_rand(cliccy_messages), 0);
+  EasyWinNoty_SetButton(noty, L"Click! :3", 0);
+  EasyWinNoty_SetNotificationCallbackEx(noty, &ToastCallback, NULL);
+  EasyWinNoty_Show(noty);
+  time_t min = time_offset_s(60);
+  for(;!is_time(min););
+  EasyWinNoty_Cleanup(noty);
+	EasyWinNoty_DeleteInstance(noty);
   return true;
 #else
   assert(curr_notif != NULL);

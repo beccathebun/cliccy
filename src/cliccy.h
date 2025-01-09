@@ -32,7 +32,8 @@ inline void nob_log(Nob_Log_Level level, const char *fmt, ...) {
 }
 #if defined(_WIN32)
 //# include <Shlobj.h>
-//# include <EasyWinNotyCWrapper.h>
+# include <float.h>
+# include <EasyWinNotyCWrapper.h>
 # define URL_OPEN "open"
 # define sleep Sleep
 # define PATHSEP "\\"
