@@ -40,7 +40,7 @@ static struct conf_t conf = {.windows=true};
 # define INCLUDES "-Iinclude", "-I.","-Iexternal","-I/usr/include/gdk-pixbuf-2.0","-I/usr/include/glib-2.0","-I/usr/lib64/glib-2.0/include","-I/usr/include/libpng16","-I/usr/include/webp","-DWITH_GZFILEOP","-I/usr/include/libmount","-I/usr/include/blkid","-I/usr/include/sysprof-6","-pthread"
 # define INCLUDES_WIN "-Iinclude", "-I.","-Iexternal"
 # define CFLAGS "-std=c23","-D_DEFAULT_SOURCE","-Wno-missing-braces","-Wno-unused-value","-Wno-pointer-sign", "-ggdb"
-# define CFLAGS_WIN "-std=c23","-D_DEFAULT_SOURCE","-Wno-missing-braces","-Wno-unused-value","-Wno-pointer-sign", "-Z"
+# define CFLAGS_WIN "-std=c23","-D_DEFAULT_SOURCE","-Wno-missing-braces","-Wno-unused-value","-Wno-pointer-sign", "-ggdb"
 # define PATHSEP "/"
 # define CC "gcc"
 # define CC_WIN "x86_64-w64-mingw32-gcc"
@@ -121,7 +121,7 @@ bool build_app_win(Cmd *cmd) {
     return true;
   }
   cmd_append(cmd, CC_WIN, "-o", "cliccy");
-  cmd_append(cmd, CFLAGS);
+  cmd_append(cmd, CFLAGS_WIN);
   if(conf.debug) cmd_append(cmd, "-DDEBUG");
   cmd_append(cmd, INCLUDES_WIN);
   cmd_append(cmd, "src/cliccy.c");
