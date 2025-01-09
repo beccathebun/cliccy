@@ -1,4 +1,5 @@
 #include "cliccy.h"
+#include "raylib.h"
 #include <stdint.h>
 #if defined(_WIN32)
 // PEASYWINNOTY noty;
@@ -709,18 +710,13 @@ void rl_init(int w, int h) {
   Clay_Raylib_Initialize(w,h, cfg.data.title, FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI | FLAG_MSAA_4X_HINT);
   if(!fonts_inited) {
     Raylib_fonts[FONT_ID_BODY_24] = (Raylib_Font) {
-      .font = LoadFontEx("resources/font/PixelifySans.ttf", 48, 0, 400),
+      .font = LoadFont_PixelifySans(),
       .fontId = FONT_ID_BODY_24,
-    };
-    Raylib_fonts[FONT_ID_BODY_16] = (Raylib_Font) {
-      .font = LoadFontEx("resources/font/PixelifySans.ttf", 32, 0, 400),
-      .fontId = FONT_ID_BODY_16,
     };
     fonts_inited = true;
   }
   
 	SetTextureFilter(Raylib_fonts[FONT_ID_BODY_24].font.texture, TEXTURE_FILTER_BILINEAR);
-  SetTextureFilter(Raylib_fonts[FONT_ID_BODY_16].font.texture, TEXTURE_FILTER_BILINEAR);
 }
 
 bool question_new() {
@@ -1250,6 +1246,19 @@ bool config_main(int argc, char **argv) {
   return true;
 }
 
+#ifdef DEBUG
+bool export_main(){
+  bool result = true;
+  clay_init();
+  rl_init(500, 500);
+  Font font = LoadFontEx("resources/font/PixelifySans.ttf", 48, 0, 400);
+  if(!ExportFontAsCode(font, "resources/font/PixelifySans.h")) return_defer(false);
+  defer:
+  UnloadFont(font);
+  CloseWindow();
+  return result;
+}
+#endif //DEBUG
 
 int main(int argc, char **argv)
 {
@@ -1263,6 +1272,10 @@ int main(int argc, char **argv)
       return_defer(test_main(argc, argv));
     else if(streq(argv[0], "config"))
       return_defer(config_main(argc, argv));
+#ifdef DEBUG
+    else if(streq(argv[0], "export"))
+      return_defer(export_main());
+#endif //DEBUG
   }
   time_t timer = rand_time();
   bool quit = false;

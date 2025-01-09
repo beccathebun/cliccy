@@ -14,6 +14,7 @@
 #include <nob.h>
 
 #include <raylib.h>
+#include <resources/font/PixelifySans.h>
 #include <time.h>
 #include <stdlib.h>
 #define TOML_IMPLEMENTATION

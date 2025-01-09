@@ -23,7 +23,6 @@
 .textColor = (colour) })
 #define CTEXT(s,size,colour) CLAY_TEXT(CLAY_STRING(s), TEXT_CONF(size,colour))
 #define FONT_ID_BODY_24 0
-#define FONT_ID_BODY_16 1
 
 #define COLOR_BG  Clay_GetColor(0x181818FF)
 #define COLOR_GRN Clay_GetColor(0x3ac952ff)
