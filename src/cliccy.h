@@ -36,7 +36,7 @@ inline void nob_log(Nob_Log_Level level, const char *fmt, ...) {
 # include <wintoastlibc.h>
 # include <float.h>
 # define URL_OPEN "open"
-# define sleep Sleep
+# define sleep(s) Sleep((s)*1000)
 # define PATHSEP "\\"
 
 // --------------------------------------------------
