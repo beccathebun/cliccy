@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -xe
+
+gendef wintoastlibs.dll
+mv wintoastlibc.lib wintoastlibc.dll.a
+x86_64-w64-mingw32-dlltool -d wintoastlibc.def -D wintoastlibc.dll -l wintoastlibc.dll.a
