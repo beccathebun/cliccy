@@ -1,5 +1,6 @@
 #include "cliccy.h"
 #include "raylib.h"
+#include "src/ui.c"
 #include <stdint.h>
 #if defined(_WIN32)
 // PEASYWINNOTY noty;
@@ -487,7 +488,7 @@ void HandleClayErrors(Clay_ErrorData errorData) {
 }
 
 Clickslut_Action rand_action() {
-  int action = rand() % CA_COUNT;
+  int action = rand_range(0, CA_COUNT-1);
   assert(action < CA_COUNT);
   return action;
 }
@@ -530,13 +531,54 @@ void dismiss_callback(
   logs(LOG_TRACE, "notif dismissed :3");
 }
 #else
-
+wchar_t *cstr_to_LPCWSTR(const char* str)
+{
+    wchar_t *wString = malloc(strlen(str)+1);
+    mbstowcs_s(NULL,wString,strlen(str)+1,str,strlen(str));
+    return wString;
+}
 #endif //_WIN32
 bool notif_new() {
 #if defined(_WIN32)
-// Todo : integrate wintoastlibc
-  #warning "notifs not supported on windows yet"
-  return true;
+  bool result = true; 
+  WTLC_Instance * instance = NULL;
+  WTLC_Template * templ = NULL;
+  WTLC_Error error = WTLC_Error_NoError;
+
+  if(!WTLC_isCompatible()){
+    logs(Log_Error, "wtlc: Your system is not compatible");
+    return false;
+  }
+
+  if(FAILED(CoInitializeEx(NULL, COINIT_APARTMENTTHREADED))){
+    logs(Log_Error, "wtlc: COM library initialization failed");
+    return false;
+  }
+
+  instance = WTLC_Instance_Create();
+  if(!instance){
+    logs(Log_Error, "wtlc: instance creation failed!");
+    return_defer(false);
+  }
+  WTLC_setAppName(instance, L"Cliccy :3");
+  WTLC_setAppUserModelId(instance, L"Microsoft.Windows.Explorer");
+  WTLC_setShortcutPolicy(instance, WTLC_SHORTCUT_POLICY_IGNORE);
+  if(!WTLC_initialize(instance, &error)){
+    logs(Log_Error, "wtlc: %s", WTLC_strerror(error));
+    return_defer(false);
+  }
+  templ = WTLC_Template_Create(WTLC_TemplateType_Text01);
+  WTLC_Template_setFirstLine(templ, cstr_to_LPCWSTR(arr_rand(cliccy_messages)));
+  if(WTLC_showToast(instance, templ, NULL, NULL, NULL, NULL, NULL, &error) < 0){
+    logs(Log_Error, "wtlc: %s", WTLC_strerror(error));
+    return_defer(false);
+  }
+  sleep(1);
+defer:
+  WTLC_Template_Destroy(templ);
+  WTLC_Instance_Destroy(instance);
+  CoUninitialize();
+  return result;
 #else
   assert(curr_notif != NULL);
   if(!notif_closed) return true;
@@ -966,16 +1008,24 @@ const dispatcher dispatchers[] = {
   [CA_Link]     = link_new,
   [CA_Lines]    = lines_new,
   [CA_Notif]    = notif_new,
-  [CA_Dialog]   = dialog_new,
+  [CA_Dialog]   = notif_new,
   [CA_Question] = question_new
 };
+static const char *castr[] = {
+  [CA_Link]     = "link",
+  [CA_Lines]    = "lines",
+  [CA_Notif]    = "notif",
+  [CA_Dialog]   = "dialog",
+  [CA_Question] = "quesion"
+};
+#define ca_to_str(ca) castr[(ca)]
 
 static_assert(ARRAY_LEN(dispatchers) == CA_COUNT , "add methods eejit");
 
 bool dispatch_action() {
-  //Clickslut_Action action = rand_action();
-  //if(action == CA_Lines) return dispatch_action();
-  return dispatchers[CA_Question]();
+  Clickslut_Action action = rand_action();
+  logs(Log_Debug, "random action: %s", ca_to_str(action));
+  return dispatchers[action]();
 }
 
 time_t rand_time() {
@@ -1011,7 +1061,7 @@ bool init_config(char *path) {
       conf_file, 
       conf, 
       strlen(conf))) return false;
-    logs(LOG_INFO, "Configuration file created: %s", conf_file);
+    logs(Log_Debug, "Configuration file created: %s", conf_file);
     temp_reset();
   }
   return parse_config(conf_file);
@@ -1034,11 +1084,11 @@ void clay_init() {
   
 }
 
-Result init() {
+bool init() {
 #if defined(__linux__)
   if(!notify_init("Clicksluts Central")) {
     logs(LOG_ERROR, "libnotify: couldn't initialise ;w;");
-    return Res_Fail_Libnotify;
+    return false;
   }
   
   curr_notif = notify_notification_new(
@@ -1049,18 +1099,9 @@ Result init() {
   notify_notification_set_timeout(curr_notif, 1000);
   loop = g_main_loop_new(NULL, FALSE);
 #elif defined(_WIN32)
-  // CoInitializeEx(0, COINIT_MULTITHREADED);
-  // noty = EasyWinNoty_CreateInstance();
-  // if (!EasyWinNoty_IsSupportSystem(noty)) {
-	// 	printf("System does not support windows notification.");
-	// }
-	
-	// if (!EasyWinNoty_IsSupportAdvancedFeature(noty)) {
-	// 	printf("System does not support advanced windows notification.");
-	// }
 #endif
   clay_init();
-  return Res_Success;
+  return true;
 }
 
 void help_config(char *program_name) {

@@ -34,6 +34,16 @@ inline void nob_log(Nob_Log_Level level, const char *fmt, ...) {
 #if defined(_WIN32)
 //# include <Shlobj.h>
 # include <wintoastlibc.h>
+typedef struct tagMSG {
+  HWND   hwnd;
+  UINT   message;
+  WPARAM wParam;
+  LPARAM lParam;
+  DWORD  time;
+  POINT  pt;
+  DWORD  lPrivate;
+} MSG, *PMSG, *NPMSG, *LPMSG;
+# include <combaseapi.h>
 # include <float.h>
 # define URL_OPEN "open"
 # define sleep(s) Sleep((s)*1000)

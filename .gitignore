@@ -70,9 +70,4 @@ dkms.conf
 !resources/raylib_mingw/lib/*
 cliccy
 resources/aud
-EasyWinNotification/
-EasyWinNotyCWrapper.h
-!resources/EasyWinNoty/EasyWinNotification.dll
-!resources/EasyWinNoty/EasyWinNotification.lib
-!resources/EasyWinNoty/EasyWinNotification.pdb
-!include/EasyWinNotyCWrapper.h
+!resources/wintoastlibc_x64/*
