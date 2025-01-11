@@ -270,37 +270,37 @@ static char *config_fmt(struct config_t* c){
 //33
 static void print_config(config_cfg_t *c) {
   printf(""
-  FG_256(255)"╭─────────────────────────────────╮\n"
-  FG_256(255)"│          Configuration          │\n"
-  "├╌╌╌╌╌╌╌╌"FG_256(51)"[config.features]"FG_256(255)"╌╌╌╌╌╌╌╌┤\n"
-  "│"FG_256(245)" # features enabled"FG_256(255)"              │\n"
-  "│"FG_256(213)"  lines  "FG_256(255)"= "FG_256(105)"%s"
-  FG_256(255)"                  │\n"
-  "│"FG_256(213)"  links  "FG_256(255)"= "FG_256(105)"%s"
-  FG_256(255)"                  │\n" 
-  "│"FG_256(213)"  notifs "FG_256(255)"= "FG_256(105)"%s"
-  FG_256(255)"                  │\n" 
-  "│"FG_256(213)"  popups "FG_256(255)"= "FG_256(105)"%s"
-  FG_256(255)"                  │\n" 
-  "├╌╌╌╌╌╌╌╌╌"FG_256(51)"[config.timer]"FG_256(255)"╌╌╌╌╌╌╌╌╌╌┤\n"
-  "│"FG_256(245)" # min/max sleep between         "FG_256(255)"│\n"
-  "│"FG_256(245)"   stuff happening in minutes    "FG_256(255)"│\n"
-  "│"FG_256(213)"  minimum "FG_256(255)"= "FG_256(121)"%03ld"
-  FG_256(255)"                  │\n" 
-  "│"FG_256(213)"  maximum "FG_256(255)"= "FG_256(121)"%03ld"
-  FG_256(255)"                  │\n" 
-  "├╌╌╌╌╌╌╌╌╌"FG_256(51)"[config.lines]"FG_256(255)"╌╌╌╌╌╌╌╌╌╌┤\n"
-  "│"FG_256(245)" # min/max lines to write        "FG_256(255)"│\n"
-  "│"FG_256(213)"  minimum "FG_256(255)"= "FG_256(121)"%03ld"
-  FG_256(255)"                  │\n" 
-  "│"FG_256(213)"  maximum "FG_256(255)"= "FG_256(121)"%03ld"
-  FG_256(255)"                  │\n" 
-  "│"FG_256(245)" # min/max penalty               "FG_256(255)"│\n"
-  "│"FG_256(213)"  penalty_min "FG_256(255)"= "FG_256(121)"%03ld"
-  FG_256(255)"              │\n" 
-  "│"FG_256(213)"  penalty_max "FG_256(255)"= "FG_256(121)"%03ld"
-  FG_256(255)"              │\n"
-  "╰─────────────────────────────────╯\n",
+  FG_256(255)"+++++++++++++++++++++++++++++++++++\n"
+  FG_256(255)"|          Configuration          |\n"
+  "|--------"FG_256(51)"[config.features]"FG_256(255)"--------|\n"
+  "|"FG_256(245)" # features enabled"FG_256(255)"              |\n"
+  "|"FG_256(213)"  lines  "FG_256(255)"= "FG_256(105)"%s"
+  FG_256(255)"                  |\n"
+  "|"FG_256(213)"  links  "FG_256(255)"= "FG_256(105)"%s"
+  FG_256(255)"                  |\n" 
+  "|"FG_256(213)"  notifs "FG_256(255)"= "FG_256(105)"%s"
+  FG_256(255)"                  |\n" 
+  "|"FG_256(213)"  popups "FG_256(255)"= "FG_256(105)"%s"
+  FG_256(255)"                  |\n" 
+  "|---------"FG_256(51)"[config.timer]"FG_256(255)"----------|\n"
+  "|"FG_256(245)" # min/max sleep between         "FG_256(255)"|\n"
+  "|"FG_256(245)"   stuff happening in minutes    "FG_256(255)"|\n"
+  "|"FG_256(213)"  minimum "FG_256(255)"= "FG_256(121)"%03ld"
+  FG_256(255)"                  |\n" 
+  "|"FG_256(213)"  maximum "FG_256(255)"= "FG_256(121)"%03ld"
+  FG_256(255)"                  |\n" 
+  "|---------"FG_256(51)"[config.lines]"FG_256(255)"----------|\n"
+  "|"FG_256(245)" # min/max lines to write        "FG_256(255)"|\n"
+  "|"FG_256(213)"  minimum "FG_256(255)"= "FG_256(121)"%03ld"
+  FG_256(255)"                  |\n" 
+  "|"FG_256(213)"  maximum "FG_256(255)"= "FG_256(121)"%03ld"
+  FG_256(255)"                  |\n" 
+  "|"FG_256(245)" # min/max penalty               "FG_256(255)"|\n"
+  "|"FG_256(213)"  penalty_min "FG_256(255)"= "FG_256(121)"%03ld"
+  FG_256(255)"              |\n" 
+  "|"FG_256(213)"  penalty_max "FG_256(255)"= "FG_256(121)"%03ld"
+  FG_256(255)"              |\n"
+  "+++++++++++++++++++++++++++++++++++\n",
   bs(c->feat.lines),
   bs(c->feat.links),
   bs(c->feat.notifs),
@@ -407,9 +407,9 @@ static bool parse_config(const char *path) {
     strcpy(str, val.u.s);
     da_append(&cfg.data.links, str);
   }
-#if defined(DEBUG)
-  print_config(&cfg.config);
-#endif //DEBUG
+// #if defined(DEBUG)
+//   print_config(&cfg.config);
+// #endif //DEBUG
 defer:
   free(errbuf);
   if(tbl != NULL) toml_free(tbl);
@@ -537,6 +537,186 @@ wchar_t *cstr_to_LPCWSTR(const char* str)
     mbstowcs_s(NULL,wString,strlen(str)+1,str,strlen(str));
     return wString;
 }
+#define RETURN_GREATER_OR_EQUAL(osvi, major, minor, build) \
+    do { \
+        if((osvi).dwMajorVersion > (major)) \
+            return TRUE; \
+        if((osvi).dwMajorVersion < (major)) \
+            return FALSE; \
+        if((osvi).dwMinorVersion > (minor)) \
+            return TRUE; \
+        if((osvi).dwMinorVersion < (minor)) \
+            return FALSE; \
+        if((osvi).dwBuildNumber > (build)) \
+            return TRUE; \
+        if((osvi).dwBuildNumber < (build)) \
+            return FALSE; \
+        return TRUE; \
+    } while(0)
+
+static bool GreaterOrEqualRTL(uint32_t major, uint32_t minor, uint32_t build)
+{
+    typedef LONG(WINAPI * RtlGetVersion_t)(PRTL_OSVERSIONINFOW);
+    HMODULE hNtdll = GetModuleHandle(TEXT("ntdll.dll"));
+    if(hNtdll)
+    {
+        RtlGetVersion_t RtlGetVersion_f = (RtlGetVersion_t)GetProcAddress(hNtdll, "RtlGetVersion");
+        if(RtlGetVersion_f)
+        {
+            RTL_OSVERSIONINFOW rosvi;
+            ZeroMemory(&rosvi, sizeof(rosvi));
+            rosvi.dwOSVersionInfoSize = sizeof(rosvi);
+            if(RtlGetVersion_f(&rosvi) == 0)
+                RETURN_GREATER_OR_EQUAL(rosvi, major, minor, build);
+            return FALSE;
+        }
+        return FALSE;
+    }
+    return FALSE;
+}
+
+static bool GreaterOrEqualK32(uint32_t major, uint32_t minor, uint32_t build)
+{
+    OSVERSIONINFOW osvi;
+    ZeroMemory(&osvi, sizeof(osvi));
+    osvi.dwOSVersionInfoSize = sizeof(osvi);
+    if(GetVersionExW(&osvi))
+        RETURN_GREATER_OR_EQUAL(osvi, major, minor, build);
+    return FALSE;
+}
+
+static bool GreaterOrEqual(uint32_t major, uint32_t minor, uint32_t build)
+{
+    return GreaterOrEqualRTL(major, minor, build) || GreaterOrEqualK32(major, minor, build);
+}
+
+static bool ValidAUMIDRequired(void)
+{
+    /* Show notifications without registered AUMID is available since Windows 10 build 1909 */
+    return !GreaterOrEqual(10, 0, 18363);
+}
+
+static bool ShortcutAUMIDRequired(void)
+{
+    /* Show notifications without shortcut with AUMID is available since Windows 10 */
+    return !GreaterOrEqual(10, 0, 0);
+}
+
+static bool RegisterBasicAUMID(const wchar_t *aumid, const wchar_t *displayName, const wchar_t *iconUri)
+{
+    /*
+     * If you need more complex example, see https://hg.mozilla.org/mozilla-central/file/d9c24252e2b25e4b3eaecfbf6110c27539e47dcd/widget/windows/ToastNotification.cpp#l245
+     *
+     * HKEY_CURRENT_USER\Software\Classes\AppID\{GUID}                                                      DllSurrogate    : REG_SZ        = ""
+     *                                   \AppUserModelId\{MOZ_TOAST_APP_NAME}PortableToast-{install hash}   CustomActivator : REG_SZ        = {GUID}
+     *                                                                                                      DisplayName     : REG_EXPAND_SZ = {display name}
+     *                                                                                                      IconUri         : REG_EXPAND_SZ = {icon path}
+     *                                   \CLSID\{GUID}                                                      AppID           : REG_SZ        = {GUID}
+     *                                                \InprocServer32                                       (Default)       : REG_SZ        = {notificationserver.dll path}
+     */
+
+    LONG ret;
+    uint32_t type;
+    HKEY aumidRoot, aumidKey;
+
+    aumidRoot = NULL;
+    ret = RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\Classes\\AppUserModelId", 0, KEY_QUERY_VALUE, &aumidRoot);
+    if(ret == ERROR_FILE_NOT_FOUND)
+    {
+        aumidRoot = NULL;
+        ret = RegCreateKeyExW(HKEY_CURRENT_USER, L"Software\\Classes\\AppUserModelId", 0, NULL, 0, KEY_WRITE, NULL, &aumidRoot, NULL);
+        if(ret != ERROR_SUCCESS)
+        {
+            RegCloseKey(aumidRoot);
+            return FALSE;
+        }
+    }
+    else if(ret != ERROR_SUCCESS)
+    {
+        return FALSE;
+    }
+
+    aumidKey = NULL;
+    ret = RegOpenKeyExW(aumidRoot, aumid, 0, KEY_QUERY_VALUE, &aumidKey);
+    if(ret == ERROR_FILE_NOT_FOUND)
+    {
+        aumidKey = NULL;
+        ret = RegCreateKeyExW(aumidRoot, aumid, 0, NULL, 0, KEY_WRITE, NULL, &aumidKey, NULL);
+        if(ret != ERROR_SUCCESS)
+        {
+            RegCloseKey(aumidKey);
+            RegCloseKey(aumidRoot);
+            return FALSE;
+        }
+    }
+    else if(ret != ERROR_SUCCESS)
+    {
+        RegCloseKey(aumidRoot);
+        return FALSE;
+    }
+
+    if(RegQueryValueExW(aumidKey, L"DisplayName", 0, (LPDWORD)&type, NULL, NULL) != ERROR_SUCCESS || type != REG_SZ)
+        RegSetValueExW(aumidKey, L"DisplayName", 0, REG_SZ, (LPBYTE)displayName, (wcslen(displayName) + 1) * sizeof(wchar_t));
+    if(RegQueryValueExW(aumidKey, L"IconUri", 0, (LPDWORD)&type, NULL, NULL) != ERROR_SUCCESS || type != REG_SZ)
+        RegSetValueExW(aumidKey, L"IconUri", 0, REG_SZ, (LPBYTE)iconUri, (wcslen(iconUri) + 1) * sizeof(wchar_t));
+
+    RegCloseKey(aumidKey);
+    RegCloseKey(aumidRoot);
+    return TRUE;
+}
+typedef enum {
+  Toast_None = 0,
+  Toast_Action_1,
+  Toast_Action_2,
+  Toast_Dismissed_User,
+  Toast_Dismissed_Hidden,
+  Toast_Dismissed_Timeout,
+  Toast_Dismissed_Invalid,
+  Toast_Failed
+} ToastState;
+static struct
+{
+  bool activated;
+  ToastState val;
+} toast_ctx = {0};
+
+static void WTLCAPI OnToastActivated(void * userData)
+{
+    toast_ctx.activated = true;
+}
+
+static void WTLCAPI OnToastActivatedAction(void * userData, int actionIndex)
+{
+  // ToastHandlerContext * ctx = (ToastHandlerContext *)(userData);
+  // StringCbPrintfW(ctx->message, sizeof(ctx->message), L"Toast Activated with Action #%d", actionIndex);
+  toast_ctx.val = Toast_Action_1+actionIndex;
+  
+}
+
+static void WTLCAPI OnToastDismissed(void * userData, WTLC_DismissalReason state)
+{
+    switch(state)
+    {
+    case WTLC_DismissalReason_UserCanceled:
+        toast_ctx.val = Toast_Dismissed_User;
+        break;
+    case WTLC_DismissalReason_ApplicationHidden:
+        toast_ctx.val = Toast_Dismissed_Hidden;
+        break;
+    case WTLC_DismissalReason_TimedOut:
+        toast_ctx.val = Toast_Dismissed_Timeout;
+        break;
+    default:
+        toast_ctx.val = Toast_Dismissed_Invalid;
+        break;
+    }
+}
+
+static void WTLCAPI OnToastFailed(void * userData)
+{
+    toast_ctx.val = Toast_Failed;
+}
+
 #endif //_WIN32
 bool notif_new() {
 #if defined(_WIN32)
@@ -544,6 +724,8 @@ bool notif_new() {
   WTLC_Instance * instance = NULL;
   WTLC_Template * templ = NULL;
   WTLC_Error error = WTLC_Error_NoError;
+  const char *imagePath = "C:\\ProgramData\\Microsoft\\User Account Pictures\\guest.png";
+  bool withImage = nob_file_exists(imagePath);
 
   if(!WTLC_isCompatible()){
     logs(Log_Error, "wtlc: Your system is not compatible");
@@ -561,19 +743,73 @@ bool notif_new() {
     return_defer(false);
   }
   WTLC_setAppName(instance, L"Cliccy :3");
-  WTLC_setAppUserModelId(instance, L"Microsoft.Windows.Explorer");
+  if(ShortcutAUMIDRequired())
+    WTLC_setAppUserModelId(instance, L"Microsoft.Windows.Explorer");
+  else if(RegisterBasicAUMID(L"CliccyApp", L"Cliccy", cstr_to_LPCWSTR(imagePath)))
+    WTLC_setAppUserModelId(instance, L"CliccyApp");
+  else if(ValidAUMIDRequired())
+    WTLC_setAppUserModelId(instance, L"Microsoft.Windows.Explorer");
+  else
+    WTLC_setAppUserModelId(instance, L"Cliccy :3");
   WTLC_setShortcutPolicy(instance, WTLC_SHORTCUT_POLICY_IGNORE);
   if(!WTLC_initialize(instance, &error)){
     logs(Log_Error, "wtlc: %s", WTLC_strerror(error));
     return_defer(false);
   }
-  templ = WTLC_Template_Create(WTLC_TemplateType_Text01);
-  WTLC_Template_setFirstLine(templ, cstr_to_LPCWSTR(arr_rand(cliccy_messages)));
-  if(WTLC_showToast(instance, templ, NULL, NULL, NULL, NULL, NULL, &error) < 0){
+  templ = WTLC_Template_Create(withImage ? WTLC_TemplateType_ImageAndText02 : WTLC_TemplateType_Text02);
+  WTLC_Template_setTextField(templ, cstr_to_LPCWSTR(cfg.data.title),WTLC_TextField_FirstLine);
+  WTLC_Template_setSecondLine(templ, L"This is a test notification");
+  WTLC_Template_setAudioOption(templ, WTLC_AudioOption_Default);
+  WTLC_Template_setExpiration(templ, 30000);
+  if(withImage)
+    WTLC_Template_setImagePath(templ, cstr_to_LPCWSTR(imagePath));
+  WTLC_Template_addAction(templ, L"Action #0");
+  WTLC_Template_addAction(templ, L"Action #1");
+ 
+  if(WTLC_showToast(instance,
+                    templ,
+                    NULL,
+                    &OnToastActivated,
+                    &OnToastActivatedAction,
+                    &OnToastDismissed,
+                    &OnToastFailed,
+                    &error) < 0){
     logs(Log_Error, "wtlc: %s", WTLC_strerror(error));
     return_defer(false);
   }
-  sleep(1);
+  time_t min = time_offset_s(60);
+  while(!is_time(min)){
+    if(toast_ctx.val != Toast_None) {
+      switch(toast_ctx.val)
+      {
+        case Toast_Action_1: {
+          logs(Log_Info, "toast: action 1");
+          link_new();
+        } break;
+        case Toast_Action_2: {
+          logs(Log_Info, "toast: action 2");
+          link_new();
+        } break;
+        case Toast_Dismissed_User: {
+          logs(Log_Info, "toast: user dismissed");
+          link_new();
+        } break;
+        case Toast_Dismissed_Hidden: {
+          logs(Log_Info, "toast: toast hidden by system");
+        } break;
+        case Toast_Dismissed_Timeout: {
+          logs(Log_Info, "toast: toast timed out");
+        } break;
+        case Toast_Dismissed_Invalid: {
+          logs(Log_Warn, "toast: toast dismissal invalid");
+        } break;
+        case Toast_Failed: {
+          logs(Log_Error, "toast: toast failed");
+        } break;
+      }
+      break;
+    }
+  }
 defer:
   WTLC_Template_Destroy(templ);
   WTLC_Instance_Destroy(instance);

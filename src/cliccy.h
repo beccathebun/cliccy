@@ -33,7 +33,6 @@ inline void nob_log(Nob_Log_Level level, const char *fmt, ...) {
 }
 #if defined(_WIN32)
 //# include <Shlobj.h>
-# include <wintoastlibc.h>
 typedef struct tagMSG {
   HWND   hwnd;
   UINT   message;
@@ -43,6 +42,8 @@ typedef struct tagMSG {
   POINT  pt;
   DWORD  lPrivate;
 } MSG, *PMSG, *NPMSG, *LPMSG;
+# include <strsafe.h>
+# include <wintoastlibc.h>
 # include <combaseapi.h>
 # include <float.h>
 # define URL_OPEN "open"
