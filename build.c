@@ -56,52 +56,46 @@ static struct conf_t conf = {0};
 #endif
 //meson setup -Dprefix=/home/rebecca/code/c/something/resources/libnotify -Dman=false -Dgtk_doc=false -Ddocbook_docs=disabled -Dintrospection=disabled -Ddefault_library=static --reconfigure build
 //"meson","setup","-Dprefix=../resources/libnotify","-Dman=false","-Dgtk_doc=false","-Ddocbook_docs=disabled","-Dintrospection=disabled","-Ddefault_library=static","--reconfigure","build"
-bool build_notify(Cmd *cmd) {
+bool build_notify(Cmd *cmd, Procs *procs) {
   if(file_exists("resources/libnotify/lib64/libnotify.a")) {
     logs(Log_Info, "libnotify already built :3");
     return true;
   }
-    
-  bool result = true;
-  const char *cwd = get_current_dir_temp();
-  logs(Log_Info, "Building libnotify :3");
-  if(!mkdir_if_not_exists("resources/libnotify")) return_defer(false);
-  const char *d = concat("-Dprefix=", cwd);
-  set_current_dir("./libnotify");
-  const char *libnotify_prefix = concat(d, "/resources/libnotify");
-  cmd_append(cmd, "meson","setup",libnotify_prefix,"-Dman=false","-Dgtk_doc=false","-Ddocbook_docs=disabled","-Dintrospection=disabled","-Ddefault_library=static","build");
+  // const char *cwd = get_current_dir_temp();
+  // logs(Log_Info, "Building libnotify :3");
+  // if(!mkdir_if_not_exists("resources/libnotify")) return_defer(false);
+  // const char *d = concat("-Dprefix=", cwd);
+  // set_current_dir("./libnotify");
+  // const char *libnotify_prefix = concat(d, "/resources/libnotify");
+  // cmd_append(cmd, "meson","setup",libnotify_prefix,"-Dman=false","-Dgtk_doc=false","-Ddocbook_docs=disabled","-Dintrospection=disabled","-Ddefault_library=static","build");
   
-  if(!cmd_run_sync_and_reset(cmd)) return_defer(false);
-  set_current_dir("./build");
-  cmd_append(cmd, "meson", "install");
-  if(!cmd_run_sync_and_reset(cmd)) return_defer(false);
-defer:
-  set_current_dir(cwd);
-  temp_reset();
-  return result;
+  // if(!cmd_run_sync_and_reset(cmd)) return_defer(false);
+  // set_current_dir("./build");
+  // cmd_append(cmd, "meson", "install");
+  cmd_append(cmd, "./scripts/build_libnotify");
+  da_append(procs, cmd_run_async_and_reset(cmd));
+  return true;
 }
 
-bool build_raylib(Cmd *cmd) {
+bool build_raylib(Cmd *cmd, Procs *procs) {
   if(file_exists("resources/raylib/lib64/libraylib.a")) {
     logs(Log_Info, "raylib already built :3");
     return true;
   }
-  bool result = true;
-  const char *cwd = get_current_dir_temp();
-  const char *rl_build = "raylib/build";
-  if(!mkdir_if_not_exists(rl_build)) return false;
-  const char *cmake_prefix = concat(cwd, "/resources/raylib");
-  set_current_dir(rl_build);
-  cmd_append(cmd, "cmake", concat("-DCMAKE_INSTALL_PREFIX:PATH=", cmake_prefix), "..");
-  if(!cmd_run_sync_and_reset(cmd)) return_defer(false);
-  cmd_append(cmd, "make", "-j5", "install");
-  if(!cmd_run_sync_and_reset(cmd)) return_defer(false);
+  // bool result = true;
+  // const char *cwd = get_current_dir_temp();
+  // const char *rl_build = "raylib/build";
+  // if(!mkdir_if_not_exists(rl_build)) return false;
+  // const char *cmake_prefix = concat(cwd, "/resources/raylib");
+  // set_current_dir(rl_build);
+  // cmd_append(cmd, "cmake", concat("-DCMAKE_INSTALL_PREFIX:PATH=", cmake_prefix), "..");
+  // if(!cmd_run_sync_and_reset(cmd)) return_defer(false);
+  // cmd_append(cmd, "make", "-j5", "install");
+  // if(!cmd_run_sync_and_reset(cmd)) return_defer(false);
 
-  //cmd_append(cmd, "make", "-C", "raylib/src");
-defer:
-  set_current_dir(cwd);
-  temp_reset();
-  return result;
+  cmd_append(cmd, "./scripts/build_raylib");
+  da_append(procs, cmd_run_async_and_reset(cmd));
+  return true;
 }
 
 const char *input_paths[] = {
@@ -245,10 +239,10 @@ int main(int argc, char **argv) {
       return 1;
     }
   }
-  if(!build_raylib(&cmd)) return 1;
+  if(!build_raylib(&cmd, &procs)) return 1;
 #ifdef __linux__
-  if(!build_notify(&cmd)) return 1;
-  
+  if(!build_notify(&cmd, &procs)) return 1;
+  if(!procs_wait_and_reset(&procs)) return 1;
   if(!build_app_win(&cmd, &procs)) return 1;
 #endif
   if(!build_app(&cmd, &procs)) return 1;

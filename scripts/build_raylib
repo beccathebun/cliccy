@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+__PREFIX="$PWD/resources/raylib"
+set -xe
+cd raylib
+mkdir -p build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX:PATH="$__PREFIX" ..
+make -j5 install

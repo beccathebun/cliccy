@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+__PREFIX="$PWD/resources/libnotify"
+set -xe
+cd libnotify
+meson setup -Dprefix="$__PREFIX" -Dman=false -Dgtk_doc=false -Ddocbook_docs=disabled -Dintrospection=disabled -Ddefault_library=static --reconfigure build
+cd build
+meson install
