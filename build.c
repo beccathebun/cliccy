@@ -105,17 +105,25 @@ defer:
 }
 
 const char *input_paths[] = {
-  "src/cliccy.c",
+  "src/ui.h",
+  "src/util.h",
   "src/cliccy.h",
   "src/ui.c",
   "src/util.c",
+  "src/cliccy.c",
   "include/log.h",
   "include/nob.h",
   "include/clay.h",
   "include/clay_renderer_raylib.c"
 };
 
-bool build_app_win(Cmd *cmd) {
+const char *src_files[] = {
+  "src/cliccy.c",
+  //"src/ui.c",
+  "src/util.c",
+};
+
+bool build_app_win(Cmd *cmd, Procs *procs) {
   if(!conf.force && !nob_needs_rebuild("./cliccy.exe", input_paths, ARRAY_LEN(input_paths))){
     logs(Log_Info, "cliccy.exe already latest version :3");
     return true;
@@ -124,13 +132,15 @@ bool build_app_win(Cmd *cmd) {
   cmd_append(cmd, CFLAGS_WIN);
   if(conf.debug) cmd_append(cmd, "-DDEBUG");
   cmd_append(cmd, INCLUDES_WIN);
-  cmd_append(cmd, "src/cliccy.c");
+  for(size_t i = 0; i < ARRAY_LEN(src_files); ++i)
+    cmd_append(cmd, src_files[i]);
   // cmd_append(cmd, "resources/wintoastlibc_x64/wintoastlibc.lib");
   cmd_append(cmd, LDLIBS_WIN);
-  return cmd_run_sync_and_reset(cmd);
+  da_append(procs, cmd_run_async_and_reset(cmd));
+  return true;
 }
 
-bool build_app(Cmd *cmd) {
+bool build_app(Cmd *cmd, Procs *procs) {
   if(!conf.force && !nob_needs_rebuild("./cliccy", input_paths, ARRAY_LEN(input_paths))){
     logs(Log_Info, "cliccy already latest version :3");
     return true;
@@ -139,9 +149,11 @@ bool build_app(Cmd *cmd) {
   cmd_append(cmd,CFLAGS);
   if(conf.debug) cmd_append(cmd, "-DDEBUG");
   cmd_append(cmd, INCLUDES);
-  cmd_append(cmd, "src/cliccy.c");
+  for(size_t i = 0; i < ARRAY_LEN(src_files); ++i)
+    cmd_append(cmd, src_files[i]);
   cmd_append(cmd, LDLIBS);
-  return cmd_run_sync_and_reset(cmd);
+  da_append(procs, cmd_run_async_and_reset(cmd));
+  return true;
 }
 
 static const char *desktop_file_str = "[Desktop Entry]\n"
@@ -208,6 +220,7 @@ int main(int argc, char **argv) {
   char *program = shift(argv, argc);
   Cmd cmd = {0};
   Cmd args = {0};
+  Nob_Procs procs = {0};
   while(argc > 0) {
     char *val = shift(argv, argc);
     while(val[0] == '-') val++;
@@ -235,9 +248,11 @@ int main(int argc, char **argv) {
   if(!build_raylib(&cmd)) return 1;
 #ifdef __linux__
   if(!build_notify(&cmd)) return 1;
-  if(!build_app_win(&cmd)) return 1;
+  
+  if(!build_app_win(&cmd, &procs)) return 1;
 #endif
-  if(!build_app(&cmd)) return 1;
+  if(!build_app(&cmd, &procs)) return 1;
+  if(!procs_wait_and_reset(&procs)) return 1;
   if(conf.run) {
     cmd_append(&cmd, "./cliccy");
     if(args.count) da_append_many(&cmd, args.items, args.count);
