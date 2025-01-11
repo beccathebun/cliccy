@@ -22,7 +22,7 @@
 #define CLAY_IMPLEMENTATION
 #include <clay.h>
 #include <clay_renderer_raylib.c>
-#include "ui.c"
+#include "ui.h"
 #define LOGGER_IMPL
 #include <log.h>
 inline void nob_log(Nob_Log_Level level, const char *fmt, ...) {
@@ -50,32 +50,8 @@ typedef struct tagMSG {
 # define sleep(s) Sleep((s)*1000)
 # define PATHSEP "\\"
 
-// --------------------------------------------------
-// stolen from:
-// musl/src/string/stpcpy.c
-#define ALIGN (sizeof(size_t))
-#define ONES ((size_t)-1/UCHAR_MAX)
-#define HIGHS (ONES * (UCHAR_MAX/2+1))
-#define HASZERO(x) ((x)-ONES & ~(x) & HIGHS)
-char *stpcpy(char *restrict d, const char *restrict s)
-{
-#ifdef __GNUC__
-	typedef size_t __attribute__((__may_alias__)) word;
-	word *wd;
-	const word *ws;
-	if ((uintptr_t)s % ALIGN == (uintptr_t)d % ALIGN) {
-		for (; (uintptr_t)s % ALIGN; s++, d++)
-			if (!(*d=*s)) return d;
-		wd=(void *)d; ws=(const void *)s;
-		for (; !HASZERO(*ws); *wd++ = *ws++);
-		d=(void *)wd; s=(const void *)ws;
-	}
-#endif
-	for (; (*d=*s); s++, d++);
 
-	return d;
-}
-// --------------------------------------------------
+
 #elif defined(__linux__)
 #include "glib-object.h"
 #include "glib.h"
@@ -86,7 +62,7 @@ char *stpcpy(char *restrict d, const char *restrict s)
 #endif // _WIN32, __linux__
 #define _CALLOC CALLOC
 //must be included after stpcpy is defined for windows :'3
-#include "util.c"
+#include "util.h"
 typedef bool (*dispatcher)(void);
 
 // TODO: get rid of this shit it makes no sense
