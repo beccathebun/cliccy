@@ -1,6 +1,7 @@
 #ifndef UI_H
 #define UI_H
 #include <raylib.h>
+#include <raymath.h>
 #include <clay.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -67,8 +68,13 @@ extern void poll_input(Input *input);
 extern void RenderButton(const char *id, Clay_Color color, const char *text, Clay_TextElementConfig *textConfig, clay_onhover hoverCB, intptr_t user_data);
 extern void RenderInputbox(Input *input);
 extern void input_reset_buf(Input *input);
-
-
+typedef enum
+{
+  Anim_Vec2 = 0,
+  Anim_Flt,
+  Anim_Color
+} Animatable;
+extern void animate_towards(intptr_t from, const intptr_t to, Animatable type);
 
 
 #endif // UI_H

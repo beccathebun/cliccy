@@ -254,5 +254,6 @@ int main(int argc, char **argv) {
   }
   da_free(args);
   da_free(cmd);
+  da_free(procs);
   return 0;
 }

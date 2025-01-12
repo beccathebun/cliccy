@@ -156,5 +156,5 @@ typedef struct config_data_t {
   CliccyStrs links;
   
 } config_data_t;
-
+//Todo : Don't depend on clay
 #endif // CLICCY_H
