@@ -42,18 +42,22 @@ static struct conf_t conf = {.windows=true};
 # define CFLAGS "-std=c23","-D_DEFAULT_SOURCE","-Wno-missing-braces","-Wno-unused-value","-Wno-pointer-sign", "-ggdb"
 # define CFLAGS_WIN "-std=c23","-D_DEFAULT_SOURCE","-Wno-missing-braces","-Wno-unused-value","-Wno-pointer-sign", "-ggdb"
 # define PATHSEP "/"
-# define CC "gcc"
+# define CC "tcc"
 # define CC_WIN "x86_64-w64-mingw32-gcc"
+# define LDLIBS_COMMON "-Lraylib/src", "-Lresources/libnotify/lib64","-lGL","-lm","-lpthread","-ldl","-lrt","-lgdk_pixbuf-2.0","-lgio-2.0","-lgobject-2.0","-lglib-2.0"
 # ifdef USE_WAYLAND_DISPLAY
-#   define LDLIBS "-Lraylib/src", "-Lresources/libnotify/lib64","-l:libraylib.a","-lGL","-lm","-lpthread","-ldl","-lrt","-l:libnotify.a","-lgdk_pixbuf-2.0","-lgio-2.0","-lgobject-2.0","-lglib-2.0", "-lwayland-client","-lwayland-cursor","-lwayland-egl","-lxkbcommon"
-#   else
-#   define LDLIBS "-Lraylib/src", "-Lresources/libnotify/lib64","-l:libraylib.a","-lGL","-lm","-lpthread","-ldl","-lrt","-l:libnotify.a","-lgdk_pixbuf-2.0","-lgio-2.0","-lgobject-2.0","-lglib-2.0","-lX11"
+#   define LDLIBS_DISPLAY "-lwayland-client","-lwayland-cursor","-lwayland-egl","-lxkbcommon"
+# else
+#   define LDLIBS_DISPLAY "-lX11"
 #   define LDLIBS_WIN "-Lresources/raylib_mingw/lib","-Lresources/wintoastlibc_x64", "-l:libraylib.a","-l:wintoastlibc.dll.a","-lopengl32","-lgdi32","-lwinmm","-lcomdlg32","-lole32","-static", "-lpthread", "-mwindows"
+#   define LDLIBS_TCC LDLIBS_COMMON, LDLIBS_DISPLAY, "-llibraylib.a","-llibnotify.a"
+#   define LDLIBS_CC LDLIBS_COMMON, LDLIBS_DISPLAY, "l:libraylib.a","l:libnotify.a"
 static struct conf_t conf = {0};
-# endif
+# endif //USE_WAYLAND_DISPLAY
 #else
 # error "platform not supported bc dev is lazy :'3"
-#endif
+#endif //_WIN32
+
 //meson setup -Dprefix=/home/rebecca/code/c/something/resources/libnotify -Dman=false -Dgtk_doc=false -Ddocbook_docs=disabled -Dintrospection=disabled -Ddefault_library=static --reconfigure build
 //"meson","setup","-Dprefix=../resources/libnotify","-Dman=false","-Dgtk_doc=false","-Ddocbook_docs=disabled","-Dintrospection=disabled","-Ddefault_library=static","--reconfigure","build"
 bool build_notify(Cmd *cmd, Procs *procs) {
@@ -145,7 +149,10 @@ bool build_app(Cmd *cmd, Procs *procs) {
   cmd_append(cmd, INCLUDES);
   for(size_t i = 0; i < ARRAY_LEN(src_files); ++i)
     cmd_append(cmd, src_files[i]);
-  cmd_append(cmd, LDLIBS);
+  if(streq(CC, "tcc"))
+    cmd_append(cmd, LDLIBS_TCC);
+  else
+   cmd_append(cmd, LDLIBS_CC);
   da_append(procs, cmd_run_async_and_reset(cmd));
   return true;
 }
