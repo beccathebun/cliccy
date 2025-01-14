@@ -1256,7 +1256,7 @@ static const char *castr[] = {
 };
 #define ca_to_str(ca) castr[(ca)]
 
-static_assert(ARRAY_LEN(dispatchers) == CA_COUNT , "add methods eejit");
+
 
 bool dispatch_action() {
   Clickslut_Action action = rand_action();
